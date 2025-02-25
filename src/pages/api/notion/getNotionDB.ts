@@ -13,6 +13,7 @@ interface NotionApiResultItem {
     Theme: { select: { name: string } };
     Author: { rich_text: { plain_text: string }[] };
     URL: { url: string };
+    Etat: { status: { name: string } };
   };
 }
 
@@ -30,6 +31,7 @@ export interface NotionItemType {
   date_publication: string;
   auteur: string;
   youtube_url: string;
+  etat: string;
 }
 
 export async function getNotionDB(): Promise<NotionItemType[]> {
@@ -61,10 +63,38 @@ export async function getNotionDB(): Promise<NotionItemType[]> {
     theme: item.properties.Theme.select?.name || "",
     miniature: item.cover.external.url,
     youtube_url: item.properties.URL.url || "",
-    date_publication: item.created_time || "",
+    date_publication: formatDate(item.created_time),
+    etat: item.properties.Etat.status?.name || "",
   }));
 
   console.log(mappedItems);
 
-  return mappedItems;
+  const filteredItems = mappedItems.filter((item) => item.etat !== "A trier");
+
+  console.log(filteredItems);
+
+  return filteredItems;
 }
+
+// Helper function to format ISO date string to "15 Janvier 2025"
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const months = [
+    "Janvier",
+    "Février",
+    "Mars",
+    "Avril",
+    "Mai",
+    "Juin",
+    "Juillet",
+    "Août",
+    "Septembre",
+    "Octobre",
+    "Novembre",
+    "Décembre",
+  ];
+  const day = date.getDate();
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};

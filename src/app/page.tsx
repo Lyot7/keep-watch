@@ -6,7 +6,9 @@ export default async function Page() {
   const notionItems: NotionItemType[] = await getNotionDB();
 
   return (
-    <main>
+    <main className="p-4 flex flex-col items-center justify-center mt-16">
+      <h1 className="text-3xl font-bold mb-4">Veille Tech & Productivité</h1>
+
       <Veille notionItems={notionItems} />
     </main>
   );
