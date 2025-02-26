@@ -19,3 +19,66 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Grille en perspective */
+.perspective-grid {
+  perspective: 1000px;
+  overflow: hidden;
+  background-color: black;
+}
+
+.grid-lines {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 300%;
+  height: 300%;
+  transform-style: preserve-3d;
+  transform: rotateX(60deg) translateZ(-50px);
+  will-change: transform;
+  pointer-events: none;
+}
+
+.grid-lines::before,
+.grid-lines::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.grid-lines::after {
+  background-size: 200px 200px;
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.15) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+}
+
+/* Ajustements pour les composants sur le fond */
+.bg-gray-800 {
+  background-color: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(5px);
+}
+
+.bg-gray-700 {
+  background-color: rgba(31, 41, 55, 0.8);
+  backdrop-filter: blur(2px);
+}
+
+/* Ajouter un peu de brillance aux bordures */
+.rounded-xl,
+.rounded-lg {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+}

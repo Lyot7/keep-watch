@@ -48,8 +48,13 @@ export default async function Page() {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-6">
-      <div className="max-w-7xl mx-auto">
+    <main className="min-h-screen bg-black text-white relative">
+      {/* Grille en perspective en arrière-plan */}
+      <div className="perspective-grid fixed inset-0 pointer-events-none z-0">
+        <div className="grid-lines"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10 p-6">
         <header className="py-12 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
             Keep Watch
