@@ -110,16 +110,20 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
               <h2 className="text-xl font-semibold line-clamp-2 mb-2">{video.title}</h2>
               <p className="text-gray-300 mb-2">{video.channelTitle}</p>
 
-              <div className="flex flex-wrap gap-2 mt-1 mb-2">
-                <span className="bg-gray-700 rounded-md px-2 py-1 text-sm">{video.theme}</span>
-              </div>
+              <div className="flex justify-between items-center mt-1 mb-2">
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="bg-gray-700 rounded-md px-2 py-1 text-sm">{video.theme}</span>
+                  </div>
+                  <p className="text-gray-400 text-sm mt-2">{video.publishedAt}</p>
+                </div>
 
-              <p className="text-gray-400 text-sm mb-3">{video.publishedAt}</p>
-
-              <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                 <button
-                  onClick={(e) => openModal(e, video.id)}
-                  className="p-2 rounded-full bg-blue-600 hover:bg-blue-700 transition text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openModal(e, video.id);
+                  }}
+                  className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition text-white self-end"
                   aria-label="Modifier l'état"
                 >
                   <FiEdit size={18} />
