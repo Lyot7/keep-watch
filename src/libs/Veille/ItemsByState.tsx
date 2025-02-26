@@ -11,7 +11,16 @@ interface ItemsByStateProps {
 const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => {
   const [updatingState, setUpdatingState] = useState<string | null>(null);
 
-  const handleUpdateState = async (videoId: string, newState: string, duration?: string, durationSeconds?: number) => {
+  const handleUpdateState = async (
+    e: React.MouseEvent,
+    videoId: string,
+    newState: string,
+    duration?: string,
+    durationSeconds?: number
+  ) => {
+    // Empêcher le clic de propager à la carte parent
+    e.stopPropagation();
+
     try {
       setUpdatingState(videoId);
       const response = await fetch('/api/videos/updateVideoState', {
@@ -39,7 +48,11 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
     <ul className="w-full flex flex-wrap gap-4 justify-center">
       {youtubeVideos.filter(video => video.state === state).length > 0 ? (
         youtubeVideos.filter(video => video.state === state).map((video) => (
-          <li key={video.id} className="my-4 bg-gray-800 rounded-xl overflow-hidden min-w-[300px] max-w-[350px] shadow-lg hover:shadow-xl transition-shadow">
+          <li
+            key={video.id}
+            className="my-4 bg-gray-800 rounded-xl overflow-hidden min-w-[300px] max-w-[350px] shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+            onClick={() => window.open(video.videoUrl, '_blank', 'noopener,noreferrer')}
+          >
             <div className="w-full relative aspect-video">
               <Image
                 src={video.thumbnailUrl}
@@ -61,32 +74,23 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
 
               <p className="text-gray-400 text-sm mb-3">{video.publishedAt}</p>
 
-              <a
-                href={video.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-400 hover:underline block mb-4"
-              >
-                Voir sur YouTube
-              </a>
-
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
                 <button
-                  onClick={() => handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds)}
+                  onClick={(e) => handleUpdateState(e, video.id, "A voir !", video.duration, video.durationSeconds)}
                   disabled={updatingState === video.id || video.state === "A voir !"}
                   className={`px-2 py-1 rounded ${video.state === "A voir !" ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} transition`}
                 >
                   À voir
                 </button>
                 <button
-                  onClick={() => handleUpdateState(video.id, "Vu", video.duration, video.durationSeconds)}
+                  onClick={(e) => handleUpdateState(e, video.id, "Vu", video.duration, video.durationSeconds)}
                   disabled={updatingState === video.id || video.state === "Vu"}
                   className={`px-2 py-1 rounded ${video.state === "Vu" ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} transition`}
                 >
                   Vu
                 </button>
                 <button
-                  onClick={() => handleUpdateState(video.id, "🤯", video.duration, video.durationSeconds)}
+                  onClick={(e) => handleUpdateState(e, video.id, "🤯", video.duration, video.durationSeconds)}
                   disabled={updatingState === video.id || video.state === "🤯"}
                   className={`px-2 py-1 rounded ${video.state === "🤯" ? 'bg-gray-600' : 'bg-purple-600 hover:bg-purple-700'} transition`}
                 >
