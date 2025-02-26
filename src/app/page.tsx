@@ -55,8 +55,7 @@ export default async function Page() {
             Keep Watch
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Votre plateforme personnelle de veille technologique et de productivité.
-            Organisez et suivez les meilleures vidéos YouTube pour rester à jour.
+            Bienvenue sur Keep Watch, ma plateforme personnelle de veille technologique et de productivité.
           </p>
         </header>
 
