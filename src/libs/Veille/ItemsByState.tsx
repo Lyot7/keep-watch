@@ -13,6 +13,28 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
   const [updatingState, setUpdatingState] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState<string | null>(null);
 
+  // Fonction pour convertir une date formatée (ex: "15 Janvier 2025") en objet Date
+  const parseFormattedDate = (dateString: string): Date => {
+    const monthsMapping: { [key: string]: number } = {
+      "Janvier": 0, "Février": 1, "Mars": 2, "Avril": 3, "Mai": 4, "Juin": 5,
+      "Juillet": 6, "Août": 7, "Septembre": 8, "Octobre": 9, "Novembre": 10, "Décembre": 11
+    };
+
+    try {
+      const parts = dateString.split(' ');
+      if (parts.length !== 3) return new Date(); // Date invalide
+
+      const day = parseInt(parts[0], 10);
+      const month = monthsMapping[parts[1]];
+      const year = parseInt(parts[2], 10);
+
+      return new Date(year, month, day);
+    } catch (error) {
+      console.error('Erreur lors du parsing de la date:', dateString, error);
+      return new Date(); // Retourner la date actuelle en cas d'erreur
+    }
+  };
+
   const handleUpdateState = async (
     videoId: string,
     newState: string,
@@ -55,8 +77,14 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
     setModalVisible(null);
   };
 
-  // Filtrer les vidéos par état
-  const filteredVideos = youtubeVideos.filter(video => video.state === state);
+  // Filtrer les vidéos par état puis trier par date de publication (du plus récent au plus ancien)
+  const filteredVideos = youtubeVideos
+    .filter(video => video.state === state)
+    .sort((a, b) => {
+      const dateA = parseFormattedDate(a.publishedAt);
+      const dateB = parseFormattedDate(b.publishedAt);
+      return dateB.getTime() - dateA.getTime(); // Tri décroissant (plus récent d'abord)
+    });
 
   return (
     <ul className="w-full flex flex-wrap gap-4 justify-center">
