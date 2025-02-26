@@ -83,18 +83,18 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                   À voir
                 </button>
                 <button
-                  onClick={(e) => handleUpdateState(e, video.id, "Vu", video.duration, video.durationSeconds)}
-                  disabled={updatingState === video.id || video.state === "Vu"}
-                  className={`px-2 py-1 rounded ${video.state === "Vu" ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} transition`}
+                  onClick={(e) => handleUpdateState(e, video.id, "Recommander", video.duration, video.durationSeconds)}
+                  disabled={updatingState === video.id || video.state === "Recommander"}
+                  className={`px-2 py-1 rounded ${video.state === "Recommander" ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} transition`}
                 >
-                  Vu
+                  Recommander
                 </button>
                 <button
-                  onClick={(e) => handleUpdateState(e, video.id, "🤯", video.duration, video.durationSeconds)}
-                  disabled={updatingState === video.id || video.state === "🤯"}
-                  className={`px-2 py-1 rounded ${video.state === "🤯" ? 'bg-gray-600' : 'bg-purple-600 hover:bg-purple-700'} transition`}
+                  onClick={(e) => handleUpdateState(e, video.id, "Impressionnant", video.duration, video.durationSeconds)}
+                  disabled={updatingState === video.id || video.state === "Impressionnant"}
+                  className={`px-2 py-1 rounded ${video.state === "Impressionnant" ? 'bg-gray-600' : 'bg-purple-600 hover:bg-purple-700'} transition`}
                 >
-                  🤯
+                  Impressionnant
                 </button>
               </div>
             </div>

@@ -14,23 +14,23 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
 
   return (
     <section>
-      {/* Afficher la catégorie "🤯" uniquement si elle contient des vidéos */}
-      {hasVideosWithState("🤯") && (
+      {/* Afficher la catégorie "Impressionnant" uniquement si elle contient des vidéos */}
+      {hasVideosWithState("Impressionnant") && (
         <>
           <p className="mb-4 my-auto text-center">
-            Les vidéos qui m&apos;ont marqué.
+            Les vidéos qui m&apos;ont impressionné.
           </p>
-          <ItemsByState youtubeVideos={youtubeVideos} state="🤯" />
+          <ItemsByState youtubeVideos={youtubeVideos} state="Impressionnant" />
         </>
       )}
 
-      {/* Afficher la catégorie "Vu" uniquement si elle contient des vidéos */}
-      {hasVideosWithState("Vu") && (
+      {/* Afficher la catégorie "Recommander" uniquement si elle contient des vidéos */}
+      {hasVideosWithState("Recommander") && (
         <>
           <p className="mb-4 my-auto text-center">
-            Les dernières vidéos que j&apos;ai regardé.
+            Les vidéos que je recommande.
           </p>
-          <ItemsByState youtubeVideos={youtubeVideos} state="Vu" />
+          <ItemsByState youtubeVideos={youtubeVideos} state="Recommander" />
         </>
       )}
 
@@ -45,7 +45,7 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
       )}
 
       {/* Message si aucune vidéo n'est trouvée dans aucune catégorie */}
-      {!hasVideosWithState("🤯") && !hasVideosWithState("Vu") && !hasVideosWithState("A voir !") && (
+      {!hasVideosWithState("Impressionnant") && !hasVideosWithState("Recommander") && !hasVideosWithState("A voir !") && (
         <p className="text-center text-xl text-gray-400 py-10">
           Aucune vidéo trouvée. Veuillez vérifier votre connexion à l&apos;API YouTube ou ajouter des chaînes à suivre.
         </p>
