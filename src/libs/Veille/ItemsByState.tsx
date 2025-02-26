@@ -2,6 +2,7 @@
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import Image from "next/image";
 import { useState } from "react";
+import { FiEdit } from "react-icons/fi";
 
 interface ItemsByStateProps {
   youtubeVideos: YoutubeVideo[];
@@ -10,17 +11,14 @@ interface ItemsByStateProps {
 
 const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => {
   const [updatingState, setUpdatingState] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState<string | null>(null);
 
   const handleUpdateState = async (
-    e: React.MouseEvent,
     videoId: string,
     newState: string,
     duration?: string,
     durationSeconds?: number
   ) => {
-    // Empêcher le clic de propager à la carte parent
-    e.stopPropagation();
-
     try {
       setUpdatingState(videoId);
       const response = await fetch('/api/videos/updateVideoState', {
@@ -35,7 +33,8 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
         throw new Error('Failed to update video state');
       }
 
-      // Reload the page to get the updated data
+      // Fermer la modale et recharger la page
+      setModalVisible(null);
       window.location.reload();
     } catch (error: unknown) {
       console.error('Error updating video state:', error instanceof Error ? error.message : 'Unknown error');
@@ -44,13 +43,28 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
     }
   };
 
+  // Fonction pour ouvrir la modale
+  const openModal = (e: React.MouseEvent, videoId: string) => {
+    e.stopPropagation();
+    setModalVisible(videoId);
+  };
+
+  // Fonction pour fermer la modale
+  const closeModal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setModalVisible(null);
+  };
+
+  // Filtrer les vidéos par état
+  const filteredVideos = youtubeVideos.filter(video => video.state === state);
+
   return (
     <ul className="w-full flex flex-wrap gap-4 justify-center">
-      {youtubeVideos.filter(video => video.state === state).length > 0 ? (
-        youtubeVideos.filter(video => video.state === state).map((video) => (
+      {filteredVideos.length > 0 ? (
+        filteredVideos.map((video) => (
           <li
             key={video.id}
-            className="my-4 bg-gray-800 rounded-xl overflow-hidden min-w-[300px] max-w-[350px] shadow-lg hover:shadow-xl transition-shadow cursor-pointer"
+            className="my-4 bg-gray-800 rounded-xl overflow-hidden min-w-[300px] max-w-[350px] shadow-lg hover:shadow-xl transition-shadow cursor-pointer relative"
             onClick={() => window.open(video.videoUrl, '_blank', 'noopener,noreferrer')}
           >
             <div className="w-full relative aspect-video">
@@ -74,30 +88,71 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
 
               <p className="text-gray-400 text-sm mb-3">{video.publishedAt}</p>
 
-              <div className="mt-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="mt-2" onClick={(e) => e.stopPropagation()}>
                 <button
-                  onClick={(e) => handleUpdateState(e, video.id, "A voir !", video.duration, video.durationSeconds)}
-                  disabled={updatingState === video.id || video.state === "A voir !"}
-                  className={`px-2 py-1 rounded ${video.state === "A voir !" ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} transition`}
+                  onClick={(e) => openModal(e, video.id)}
+                  className="p-2 rounded-full bg-blue-600 hover:bg-blue-700 transition text-white"
+                  aria-label="Modifier l'état"
                 >
-                  À voir
-                </button>
-                <button
-                  onClick={(e) => handleUpdateState(e, video.id, "Recommander", video.duration, video.durationSeconds)}
-                  disabled={updatingState === video.id || video.state === "Recommander"}
-                  className={`px-2 py-1 rounded ${video.state === "Recommander" ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} transition`}
-                >
-                  Recommander
-                </button>
-                <button
-                  onClick={(e) => handleUpdateState(e, video.id, "Impressionnant", video.duration, video.durationSeconds)}
-                  disabled={updatingState === video.id || video.state === "Impressionnant"}
-                  className={`px-2 py-1 rounded ${video.state === "Impressionnant" ? 'bg-gray-600' : 'bg-purple-600 hover:bg-purple-700'} transition`}
-                >
-                  Impressionnant
+                  <FiEdit size={18} />
                 </button>
               </div>
             </div>
+
+            {/* Modal pour modifier l'état de la vidéo */}
+            {modalVisible === video.id && (
+              <>
+                <div
+                  className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                  onClick={closeModal}
+                ></div>
+                <div
+                  className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 p-6 rounded-lg shadow-xl z-50 w-80"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-xl font-semibold mb-4">Modifier l&apos;état</h3>
+                  <p className="text-gray-300 mb-4 line-clamp-1">{video.title}</p>
+
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds)}
+                      disabled={updatingState === video.id}
+                      className={`p-2 rounded ${video.state === "A voir !" ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} transition`}
+                    >
+                      À voir
+                    </button>
+                    <button
+                      onClick={() => handleUpdateState(video.id, "Recommander", video.duration, video.durationSeconds)}
+                      disabled={updatingState === video.id}
+                      className={`p-2 rounded ${video.state === "Recommander" ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} transition`}
+                    >
+                      Recommander
+                    </button>
+                    <button
+                      onClick={() => handleUpdateState(video.id, "Impressionnant", video.duration, video.durationSeconds)}
+                      disabled={updatingState === video.id}
+                      className={`p-2 rounded ${video.state === "Impressionnant" ? 'bg-gray-600' : 'bg-purple-600 hover:bg-purple-700'} transition`}
+                    >
+                      Impressionnant
+                    </button>
+                    <button
+                      onClick={() => handleUpdateState(video.id, "Nul", video.duration, video.durationSeconds)}
+                      disabled={updatingState === video.id}
+                      className={`p-2 rounded ${video.state === "Nul" ? 'bg-gray-600' : 'bg-red-600 hover:bg-red-700'} transition`}
+                    >
+                      Nul
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={closeModal}
+                    className="mt-4 p-2 w-full rounded bg-gray-600 hover:bg-gray-700 transition"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </>
+            )}
           </li>
         ))
       ) : (
