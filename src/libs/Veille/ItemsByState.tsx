@@ -2,7 +2,6 @@
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import Image from "next/image";
 import { useState } from "react";
-import { FiClock } from "react-icons/fi";
 
 interface ItemsByStateProps {
   youtubeVideos: YoutubeVideo[];
@@ -58,9 +57,6 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
 
               <div className="flex flex-wrap gap-2 mt-1 mb-2">
                 <span className="bg-gray-700 rounded-md px-2 py-1 text-sm">{video.theme}</span>
-                <span className="bg-blue-700 rounded-md px-2 py-1 text-sm flex items-center">
-                  <FiClock className="mr-1" /> {video.duration}
-                </span>
               </div>
 
               <p className="text-gray-400 text-sm mb-3">{video.publishedAt}</p>
