@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Modèle pour stocker l'état des vidéos
+model VideoState {
+  id              String   @id @default(uuid())
+  videoId         String   @unique
+  state           String   // "A voir !", "Vu", "🤯", etc.
+  duration        String?  // Durée formatée de la vidéo (ex: "10:30")
+  durationSeconds Int?     // Durée en secondes pour le filtrage
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Modèle pour stocker les thèmes personnalisés
+model Theme {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Modèle pour associer des vidéos à des thèmes personnalisés
+model VideoTheme {
+  id        String   @id @default(uuid())
+  videoId   String
+  themeId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indique que videoId et themeId doivent être uniques ensemble
+  @@unique([videoId, themeId])
+} 

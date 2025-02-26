@@ -1,15 +1,71 @@
 import Veille from "@/libs/Veille/VeilleScreen";
-import { getNotionDB, NotionItemType } from "@/pages/api/notion/getNotionDB";
+import { getYoutubeVideos } from "@/pages/api/youtube/getYoutubeVideos";
+import { PrismaClient } from "@prisma/client";
 
-// This page is now a Server Component, so we can use async directly.
+// Initialize Prisma client
+const prisma = new PrismaClient();
+
+// This page is a Server Component, so we can use async directly.
 export default async function Page() {
-  const notionItems: NotionItemType[] = await getNotionDB();
+  // Récupérer les vidéos de YouTube
+  const youtubeVideos = await getYoutubeVideos();
+
+  // Vérifier si le modèle VideoState existe dans Prisma
+  let videoStates: { videoId: string; state: string; duration: string | null; durationSeconds: number | null }[] = [];
+
+  try {
+    // Récupérer les états des vidéos depuis la base de données
+    // Sans vérification préalable, on utilise try/catch pour gérer les erreurs
+    videoStates = await prisma.videoState.findMany({
+      select: {
+        videoId: true,
+        state: true,
+        duration: true,
+        durationSeconds: true
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching video states:", error);
+    // Continuer sans les états
+  }
+
+  // Créer un Map pour accéder rapidement aux données d'une vidéo par son ID
+  const videoStateMap = new Map(
+    videoStates.map(state => [state.videoId, state])
+  );
+
+  // Mettre à jour les états des vidéos et préserver les informations de durée
+  const videosWithState = youtubeVideos.map(video => {
+    const stateData = videoStateMap.get(video.id);
+    return {
+      ...video,
+      state: stateData?.state || video.state || "A voir !",
+      // Conserver les informations de durée de l'API YouTube
+      // mais utiliser celles de la base de données si disponibles
+      duration: stateData?.duration || video.duration,
+      durationSeconds: stateData?.durationSeconds || video.durationSeconds,
+    };
+  });
 
   return (
-    <main className="p-4 flex flex-col items-center justify-center mt-16">
-      <h1 className="text-3xl font-bold mb-4">Veille Tech & Productivité</h1>
+    <main className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white p-6">
+      <div className="max-w-7xl mx-auto">
+        <header className="py-12 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            Keep Watch
+          </h1>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            Votre plateforme personnelle de veille technologique et de productivité.
+            Organisez et suivez les meilleures vidéos YouTube pour rester à jour.
+          </p>
+        </header>
 
-      <Veille notionItems={notionItems} />
+        <Veille youtubeVideos={videosWithState} />
+
+        <footer className="mt-16 pt-8 border-t border-gray-700 text-center text-gray-400">
+          <p>Développé avec Next.js, Tailwind CSS et l&apos;API YouTube</p>
+        </footer>
+      </div>
     </main>
   );
 }

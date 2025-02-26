@@ -1,33 +1,33 @@
 "use client";
-import { NotionItemType } from "@/pages/api/notion/getNotionDB";
+import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { useEffect } from "react";
 import ItemsByState from "./ItemsByState";
 
 interface VeilleProps {
-  notionItems: NotionItemType[];
+  youtubeVideos: YoutubeVideo[];
 }
 
-const Veille: React.FC<VeilleProps> = ({ notionItems }) => {
+const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
 
   useEffect(() => {
-    console.log(notionItems);
-  }, [notionItems]);
+    console.log(youtubeVideos);
+  }, [youtubeVideos]);
 
   return (
     <section>
       <p className="mb-4 my-auto text-center">
         Les vidéos qui m&apos;ont marqué.
       </p>
-      <ItemsByState notionItems={notionItems} state="🤯" />
+      <ItemsByState youtubeVideos={youtubeVideos} state="🤯" />
       <p className="mb-4 my-auto text-center">
         Les dernières vidéos que j&apos;ai regardé.
       </p>
-      <ItemsByState notionItems={notionItems} state="Vu" />
+      <ItemsByState youtubeVideos={youtubeVideos} state="Vu" />
 
       <p className="mb-4 my-auto text-center">
         Les vidéos qu&apos;il faudrait que je regarde.
       </p>
-      <ItemsByState notionItems={notionItems} state="A voir !" />
+      <ItemsByState youtubeVideos={youtubeVideos} state="A voir !" />
     </section>
   );
 };
