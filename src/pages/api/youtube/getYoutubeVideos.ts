@@ -1,6 +1,11 @@
+import { ApiQuotaService } from "@/libs/apiQuotaService";
+import { YoutubeVideoCache } from "@/libs/youtubeVideoCache";
+import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+const prisma = new PrismaClient();
 
 export interface YoutubeVideo {
   id: string;
@@ -87,6 +92,9 @@ function formatDuration(durationSeconds: number): string {
 
 export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
   const apiKey = process.env.YOUTUBE_API_KEY;
+  const maxResultsPerChannel = parseInt(
+    process.env.YOUTUBE_MAX_RESULTS_PER_CHANNEL || "10"
+  );
 
   if (!apiKey) {
     throw new Error("YouTube API Key not found in environment variables");
@@ -97,10 +105,48 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
   // Récupérer les vidéos de chaque chaîne
   for (const channel of YOUTUBE_CHANNELS) {
     try {
-      // 1. Récupérer les IDs des vidéos via l'API Search
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=50&type=video`
+      // Vérifier si nous avons besoin de rafraîchir le cache pour cette chaîne
+      const needsRefresh = await YoutubeVideoCache.needsRefresh(channel.id);
+
+      // Si nous n'avons pas besoin de rafraîchir, utiliser le cache
+      if (!needsRefresh) {
+        const cachedVideos = await YoutubeVideoCache.getCachedVideos(
+          channel.id
+        );
+        allVideos.push(...cachedVideos);
+        console.log(`Utilisation du cache pour la chaîne ${channel.id}`);
+        continue;
+      }
+
+      // Vérifier si nous avons assez de quota pour les opérations API
+      const hasQuotaForSearch = await ApiQuotaService.hasAvailableQuota(
+        "SEARCH"
       );
+      if (!hasQuotaForSearch) {
+        console.log(
+          `Quota API insuffisant pour la recherche sur la chaîne ${channel.id}`
+        );
+
+        // Utiliser le cache même s'il est périmé plutôt que de ne rien retourner
+        const cachedVideos = await YoutubeVideoCache.getCachedVideos(
+          channel.id
+        );
+        if (cachedVideos.length > 0) {
+          allVideos.push(...cachedVideos);
+          console.log(
+            `Utilisation du cache expiré pour la chaîne ${channel.id}`
+          );
+        }
+        continue;
+      }
+
+      // 1. Récupérer les IDs des vidéos via l'API Search avec limitation
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=${maxResultsPerChannel}&type=video`
+      );
+
+      // Tracker l'utilisation du quota après la requête
+      await ApiQuotaService.trackQuotaUsage("SEARCH");
 
       if (!response.ok) {
         throw new Error(`YouTube API error: ${response.statusText}`);
@@ -113,10 +159,27 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
         .map((item: YouTubeApiItem) => item.id.videoId)
         .join(",");
 
+      // Vérifier si nous avons assez de quota pour les détails des vidéos
+      const videoCount = data.items.length;
+      const hasQuotaForDetails = await ApiQuotaService.hasAvailableQuota(
+        "VIDEO_DETAILS",
+        videoCount
+      );
+
+      if (!hasQuotaForDetails) {
+        console.log(
+          `Quota API insuffisant pour les détails de ${videoCount} vidéos`
+        );
+        continue;
+      }
+
       // 2. Récupérer les détails des vidéos, y compris la durée
       const videoDetailsResponse = await fetch(
         `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=contentDetails,snippet`
       );
+
+      // Tracker l'utilisation du quota après la requête
+      await ApiQuotaService.trackQuotaUsage("VIDEO_DETAILS", videoCount);
 
       if (!videoDetailsResponse.ok) {
         throw new Error(
@@ -168,9 +231,21 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
           };
         });
 
+      // Mettre en cache les vidéos récupérées
+      await YoutubeVideoCache.cacheVideos(channelVideos, channel.id);
+
       allVideos.push(...channelVideos);
     } catch (error) {
       console.error(`Error fetching videos for channel ${channel.id}:`, error);
+
+      // En cas d'erreur, essayer de récupérer depuis le cache
+      const cachedVideos = await YoutubeVideoCache.getCachedVideos(channel.id);
+      if (cachedVideos.length > 0) {
+        allVideos.push(...cachedVideos);
+        console.log(
+          `Utilisation du cache pour la chaîne ${channel.id} suite à une erreur`
+        );
+      }
     }
   }
 
