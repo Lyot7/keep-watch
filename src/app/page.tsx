@@ -50,7 +50,7 @@ export default async function Page() {
   return (
     <main className="min-h-screen bg-black text-white relative">
       {/* Grille en perspective en arrière-plan */}
-      <div className="perspective-grid fixed inset-0 pointer-events-none z-0">
+      <div className="perspective-grid">
         <div className="grid-lines"></div>
       </div>
 

@@ -22,48 +22,62 @@ body {
 
 /* Grille en perspective */
 .perspective-grid {
-  perspective: 1000px;
+  perspective: 800px;
   overflow: hidden;
-  background-color: black;
+  background-color: #000000;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .grid-lines {
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 300%;
-  height: 300%;
+  width: 400%;
+  height: 400%;
+  top: -150%;
+  left: -150%;
   transform-style: preserve-3d;
-  transform: rotateX(60deg) translateZ(-50px);
-  will-change: transform;
-  pointer-events: none;
+  transform: rotateX(60deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .grid-lines::before,
 .grid-lines::after {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-image: linear-gradient(
       to right,
-      rgba(255, 255, 255, 0.1) 1px,
+      rgba(255, 255, 255, 0.07) 1px,
       transparent 1px
     ),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
   background-size: 50px 50px;
+  background-position: center center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .grid-lines::after {
   background-size: 200px 200px;
   background-image: linear-gradient(
       to right,
-      rgba(255, 255, 255, 0.15) 1px,
+      rgba(255, 255, 255, 0.12) 1px,
       transparent 1px
     ),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-position: center center;
+}
+
+/* Améliorer l'apparence de la grille sur les appareils à basse performance */
+@media (prefers-reduced-motion: reduce) {
+  .perspective-grid {
+    display: none;
+  }
 }
 
 /* Ajustements pour les composants sur le fond */
