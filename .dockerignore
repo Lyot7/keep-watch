@@ -1,0 +1,22 @@
+# Don't ignore CSS, Tailwind config and PostCSS files
+!tailwind.config.ts
+!postcss.config.mjs
+!src/app/globals.css
+
+# Ignore node_modules - we'll reinstall these in Docker
+node_modules
+
+# Ignore development files and folders
+.git
+.github
+.next
+.vercel
+.vscode
+*.log
+*.swp
+.DS_Store
+
+# Ignore test files
+**/*.test.ts
+**/*.test.tsx
+**/__tests__ 

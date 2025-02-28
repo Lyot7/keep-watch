@@ -1,0 +1,147 @@
+# Project Context and Architecture
+
+- This is a Next.js application using App Router
+- Uses TypeScript (TSX) for type-safe development
+- Uses Shadcn UI or React for UI components
+- Styled with Tailwind CSS and Shadcn UI
+- Uses Prisma ORM with PostgreSQL for data management
+- Focus on clean architecture and minimal code
+
+# Architecture Principles
+
+- Follow the principles of separation of concerns
+- Use a domain-driven design approach when applicable
+- Prefer feature-based organization over technical-based
+- Structure the application with these layers:
+  - UI Layer (components, pages)
+  - Service Layer (business logic)
+  - Data Access Layer (Prisma models, repositories)
+- Keep components small and focused on a single responsibility
+- Use React Context for global state only when necessary
+- Prefer server components where possible to reduce client-side JavaScript
+
+# Code Quality Standards
+
+- Write DRY (Don't Repeat Yourself) code but balance with readability
+- Optimize for readability and maintainability over cleverness
+- Aim for code that is self-explanatory and requires minimal comments
+- Use TypeScript with proper type annotations to prevent runtime errors
+- Implement proper error handling at all levels of the application
+- Follow the principle of least privilege for data access
+- Write code that is testable and maintainable
+- Ensure all functions include proper return type definitions
+- Use TypeScript's strict mode for maximum type safety
+
+# Next.js Best Practices
+
+- Utilize Next.js App Router features appropriately
+- Leverage Server Components for improved performance
+- Use static generation when possible for better performance
+- Implement proper data fetching strategies (SSR, ISR, CSR) based on use case
+- Use route handlers for API endpoints
+- Optimize images with Next.js Image component
+- Use proper metadata for SEO optimization
+
+# React Guidelines
+
+- Use functional components with hooks
+- Avoid class components
+- Use custom hooks to extract and reuse logic
+- Keep component state as local as possible
+- Use React.memo, useMemo, and useCallback for performance optimization when necessary
+- Follow proper naming conventions (PascalCase for components, camelCase for functions)
+- Prefer composition over inheritance
+- Implement proper prop validation with TypeScript interfaces
+- Use TypeScript generics for reusable components
+- Always define explicit return types for components (React.FC<Props>)
+
+# Tailwind and UI Guidelines
+
+- Use Tailwind's utility classes directly in JSX for simple styling
+- Extract common patterns into components using Shadcn UI
+- Create a consistent design system with reusable components
+- Use CSS variables for theming
+- Optimize for mobile-first responsive design
+- Keep component styling consistent with the rest of the application
+- Minimize custom CSS in favor of Tailwind utilities
+- Follow accessibility best practices (WCAG guidelines)
+
+# Prisma and Database Guidelines
+
+- Design normalized database schemas to avoid redundancy
+- Use appropriate field types and constraints
+- Implement database indexes for frequently queried fields
+- Use transactions for operations that require atomicity
+- Write efficient database queries to avoid N+1 problems
+- Implement proper error handling for database operations
+- Use migrations for schema changes
+- Implement soft deletes where appropriate
+- Keep Prisma schema clean and well-documented
+
+# Code Efficiency Guidelines
+
+- Keep component render cycles efficient
+- Minimize dependencies and bundle size
+- Use code splitting and dynamic imports for larger components
+- Implement proper TypeScript interfaces and types
+- Write concise, focused functions that do one thing well
+- Avoid premature optimization but be mindful of performance
+- Use destructuring and modern JavaScript features for cleaner code
+- Balance between declarative and imperative code styles
+
+# Testing Guidelines
+
+- Write unit tests for all critical business logic
+- Implement integration tests for API endpoints
+- Use React Testing Library for component testing
+- Aim for high test coverage of business logic (>80%)
+- Use Jest for test runner and assertions
+- Mock external dependencies in unit tests
+- Test both success and error cases
+- Use snapshot testing sparingly and with purpose
+- Implement end-to-end tests for critical user flows
+- Write testable code using dependency injection principles
+- Test edge cases and boundary conditions
+- Implement CI/CD pipeline for automated testing
+
+# Error Handling Guidelines
+
+- Implement centralized error handling for consistent user experience
+- Use custom error classes to differentiate error types
+- Add proper error boundaries in React components
+- Log errors with appropriate context for debugging
+- Implement graceful degradation when services fail
+- Provide user-friendly error messages that don't expose sensitive information
+- Handle asynchronous errors with try/catch and async/await
+- Validate input data at system boundaries
+- Add runtime type checking for external API responses
+- Implement retry mechanisms for transient failures
+- Handle edge cases explicitly rather than allowing silent failures
+- Return appropriate HTTP status codes for API errors
+
+# Assistance Preferences
+
+- Suggest architectural improvements when reviewing code
+- Provide explanations for suggested optimizations
+- Recommend patterns that reduce code complexity
+- Offer alternatives that require fewer lines of code without sacrificing readability
+- Identify potential performance bottlenecks
+- Help refactor code to be more maintainable
+- Always consider edge cases in data handling
+- Suggest unit tests for critical business logic
+- When you make edits suggestions try not using spaces so i dont see +33 lines for example if you changed only one
+- You can move files delete them to have a better architecture organisation and same for folders
+- Dont create folders or files if they are empty
+- Remove automatically unused or empty files and folders
+
+# Security Guidelines
+
+- Implement proper input validation
+- Use parameterized queries to prevent SQL injection
+- Implement proper authentication and authorization
+- Handle sensitive information securely
+- Follow OWASP security best practices
+- Use environment variables for sensitive configuration
+- Implement proper CORS policies
+- Validate all user input on both client and server side
+- Never edit a .env key for a placeholder one

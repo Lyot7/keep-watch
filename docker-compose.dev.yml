@@ -4,7 +4,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: keepwatch-app
     ports:
       - "3000:3000"
@@ -15,10 +15,23 @@ services:
       YOUTUBE_CACHE_TTL_HOURS: ${YOUTUBE_CACHE_TTL_HOURS:-24}
       YOUTUBE_MAX_RESULTS_PER_CHANNEL: ${YOUTUBE_MAX_RESULTS_PER_CHANNEL:-10}
       YOUTUBE_DAILY_QUOTA_LIMIT: ${YOUTUBE_DAILY_QUOTA_LIMIT:-8000}
-    # Comment out these volume mounts for production use
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
+      TAILWIND_MODE: watch
+      # Force Next.js to use the App Router
+      NEXT_RUNTIME: "nodejs"
+    volumes:
+      # Mount source code but not node_modules or .next
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./prisma:/app/prisma
+      - ./scripts:/app/scripts
+      - ./next.config.js:/app/next.config.js
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./tailwind.config.ts:/app/tailwind.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      # Use a named volume for the .next directory
+      - next-build-cache:/app/.next
+      # Explicitly exclude node_modules to use the container's version
+      - /app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,3 +70,4 @@ services:
 
 volumes:
   keepwatch-postgres-data:
+  next-build-cache:

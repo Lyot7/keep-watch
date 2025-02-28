@@ -4,14 +4,20 @@ import {
   YoutubeVideoCache,
 } from "@prisma/client";
 
-// Repository layer - handles database operations
-class YoutubeRepository {
+/**
+ * Repository for YouTube data access
+ * Handles all database operations related to YouTube content
+ */
+export class YoutubeRepository {
   private prisma: PrismaClient;
 
-  constructor(prisma: PrismaClient) {
+  constructor(prisma: PrismaClient = new PrismaClient()) {
     this.prisma = prisma;
   }
 
+  /**
+   * Add or update a YouTube channel in the database
+   */
   async upsertChannel(channelData: {
     channelId: string;
     title: string;
@@ -39,6 +45,9 @@ class YoutubeRepository {
     });
   }
 
+  /**
+   * Add or update a YouTube video in the database
+   */
   async upsertVideo(videoData: {
     videoId: string;
     title: string;
@@ -91,6 +100,9 @@ class YoutubeRepository {
     });
   }
 
+  /**
+   * Get videos by state
+   */
   async getVideosByState(state: string): Promise<YoutubeVideoCache[]> {
     return this.prisma.youtubeVideoCache.findMany({
       where: { state },
@@ -98,8 +110,11 @@ class YoutubeRepository {
     });
   }
 
+  /**
+   * Update the state of a video
+   */
   async upsertVideoState(videoId: string, state: string): Promise<void> {
-    // Mettre à jour l'état dans la table VideoState
+    // Update state in VideoState table
     await this.prisma.videoState.upsert({
       where: { videoId },
       update: { state },
@@ -109,19 +124,25 @@ class YoutubeRepository {
       },
     });
 
-    // Mettre à jour l'état dans la cache des vidéos
+    // Update state in video cache
     await this.prisma.youtubeVideoCache.update({
       where: { videoId },
       data: { state },
     });
   }
 
+  /**
+   * Get all themes
+   */
   async getAllThemes() {
     return this.prisma.theme.findMany({
       orderBy: { name: "asc" },
     });
   }
 
+  /**
+   * Add or update a theme
+   */
   async upsertTheme(themeName: string) {
     return this.prisma.theme.upsert({
       where: { name: themeName },
@@ -132,6 +153,9 @@ class YoutubeRepository {
     });
   }
 
+  /**
+   * Add or update a video-theme association
+   */
   async upsertVideoTheme(videoId: string, themeId: string) {
     return this.prisma.videoTheme.upsert({
       where: {
@@ -147,90 +171,11 @@ class YoutubeRepository {
       },
     });
   }
-}
-
-// Service layer - implements business logic
-export class YoutubeService {
-  private repository: YoutubeRepository;
-
-  constructor() {
-    const prisma = new PrismaClient();
-    this.repository = new YoutubeRepository(prisma);
-  }
 
   /**
-   * Ajoute ou met à jour une chaîne YouTube dans la base de données
+   * Clean up Prisma connection
    */
-  async upsertChannel(channelData: {
-    channelId: string;
-    title: string;
-    description?: string;
-    thumbnailUrl?: string;
-    subscriberCount?: number;
-  }): Promise<YoutubeChannel> {
-    return this.repository.upsertChannel(channelData);
-  }
-
-  /**
-   * Ajoute ou met à jour une vidéo YouTube dans la base de données
-   */
-  async upsertVideo(videoData: {
-    videoId: string;
-    title: string;
-    description: string;
-    thumbnailUrl: string;
-    channelTitle: string;
-    channelId: string;
-    publishedAt: string;
-    duration: string;
-    durationSeconds: number;
-    viewCount?: number;
-    likeCount?: number;
-    theme?: string;
-    state?: string;
-  }): Promise<YoutubeVideoCache> {
-    // S'assurer que la chaîne existe
-    await this.upsertChannel({
-      channelId: videoData.channelId,
-      title: videoData.channelTitle,
-    });
-
-    return this.repository.upsertVideo(videoData);
-  }
-
-  /**
-   * Récupère les vidéos en fonction de l'état
-   */
-  async getVideosByState(state: string): Promise<YoutubeVideoCache[]> {
-    return this.repository.getVideosByState(state);
-  }
-
-  /**
-   * Met à jour l'état d'une vidéo
-   */
-  async updateVideoState(videoId: string, state: string): Promise<void> {
-    await this.repository.upsertVideoState(videoId, state);
-  }
-
-  /**
-   * Récupère tous les thèmes disponibles
-   */
-  async getAllThemes() {
-    return this.repository.getAllThemes();
-  }
-
-  /**
-   * Ajoute un thème à une vidéo
-   */
-  async addThemeToVideo(videoId: string, themeName: string) {
-    // Créer ou récupérer le thème
-    const theme = await this.repository.upsertTheme(themeName);
-
-    // Associer le thème à la vidéo
-    return this.repository.upsertVideoTheme(videoId, theme.id);
+  async disconnect(): Promise<void> {
+    await this.prisma.$disconnect();
   }
 }
-
-// Export a singleton instance
-const youtubeService = new YoutubeService();
-export default youtubeService;

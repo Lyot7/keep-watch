@@ -1,40 +1,38 @@
 import { PrismaClient } from "@prisma/client";
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 
-// Initialiser Prisma
+// Initialize Prisma
 const prisma = new PrismaClient();
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  // Vérifier si la méthode est POST
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
-
+export async function POST(request: NextRequest) {
   try {
-    const { videoId, state, duration, durationSeconds } = req.body;
+    // Parse the request body
+    const body = await request.json();
+    const { videoId, state, duration, durationSeconds } = body;
 
-    // Validation des données
+    // Validation of data
     if (!videoId || !state) {
-      return res
-        .status(400)
-        .json({ message: "videoId and state are required" });
+      return NextResponse.json(
+        { message: "videoId and state are required" },
+        { status: 400 }
+      );
     }
 
     try {
-      // Vérifier si la table VideoState existe en exécutant une requête
+      // Check if the VideoState table exists by executing a query
       await prisma.$queryRaw`SELECT 1 FROM "VideoState" LIMIT 1`;
     } catch (tableError) {
       console.error("VideoState table not found:", tableError);
-      return res.status(500).json({
-        message:
-          "VideoState table not available. Make sure to run prisma generate and prisma migrate.",
-      });
+      return NextResponse.json(
+        {
+          message:
+            "VideoState table not available. Make sure to run prisma generate and prisma migrate.",
+        },
+        { status: 500 }
+      );
     }
 
-    // Trouver si la vidéo existe déjà
+    // Find if the video already exists
     const existingVideo = await prisma.videoState.findUnique({
       where: {
         videoId: videoId,
@@ -44,20 +42,20 @@ export default async function handler(
     let videoState;
 
     if (existingVideo) {
-      // Mettre à jour la vidéo existante
+      // Update existing video
       videoState = await prisma.videoState.update({
         where: {
           videoId: videoId,
         },
         data: {
           state: state,
-          // Mettre à jour la durée seulement si elle est fournie
+          // Update duration only if provided
           ...(duration && { duration }),
           ...(durationSeconds && { durationSeconds }),
         },
       });
     } else {
-      // Créer un nouvel état pour la vidéo
+      // Create a new state for the video
       videoState = await prisma.videoState.create({
         data: {
           videoId: videoId,
@@ -68,9 +66,12 @@ export default async function handler(
       });
     }
 
-    return res.status(200).json(videoState);
+    return NextResponse.json(videoState, { status: 200 });
   } catch (error) {
     console.error("Error updating video state:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }

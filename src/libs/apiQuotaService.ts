@@ -23,7 +23,7 @@ export class ApiQuotaService {
     const dailyQuotaLimit = parseInt(
       process.env.YOUTUBE_DAILY_QUOTA_LIMIT || "8000"
     );
-    const today = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
+    const today = new Date(); // Use a DateTime object instead of a string
 
     // Récupérer ou créer l'entrée pour aujourd'hui
     let usage = await prisma.apiQuotaUsage.findUnique({
@@ -32,7 +32,7 @@ export class ApiQuotaService {
 
     if (!usage) {
       usage = await prisma.apiQuotaUsage.create({
-        data: { date: today, quotaUsed: 0, requestCount: 0 },
+        data: { date: today, quotaUsed: 0 },
       });
     }
 
@@ -48,21 +48,17 @@ export class ApiQuotaService {
     count: number = 1
   ): Promise<void> {
     const quotaUsed = API_COSTS[operationType] * count;
-    const today = new Date().toISOString().split("T")[0]; // Format YYYY-MM-DD
+    const today = new Date(); // Use a DateTime object
 
     // Mettre à jour l'utilisation du quota pour aujourd'hui
     await prisma.apiQuotaUsage.upsert({
       where: { date: today },
       update: {
         quotaUsed: { increment: quotaUsed },
-        requestCount: { increment: 1 },
-        lastUpdated: new Date(),
       },
       create: {
         date: today,
         quotaUsed: quotaUsed,
-        requestCount: 1,
-        lastUpdated: new Date(),
       },
     });
   }
@@ -78,7 +74,7 @@ export class ApiQuotaService {
     const dailyQuotaLimit = parseInt(
       process.env.YOUTUBE_DAILY_QUOTA_LIMIT || "8000"
     );
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date(); // Use a DateTime object
 
     const usage = await prisma.apiQuotaUsage.findUnique({
       where: { date: today },

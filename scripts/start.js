@@ -39,6 +39,7 @@ try {
     console.log(
       "⚠️ Des erreurs ont été rencontrées lors de la configuration de la base de données, mais on continue..."
     );
+    console.log(`   Erreur: ${error.message}`);
   }
 
   // Démarrer l'application

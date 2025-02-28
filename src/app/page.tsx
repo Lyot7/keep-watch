@@ -1,22 +1,52 @@
+import ErrorBoundary from "@/components/ErrorBoundary";
+import VideoError from "@/components/VideoError";
 import Veille from "@/libs/Veille/VeilleScreen";
-import { getYoutubeVideos } from "@/pages/api/youtube/getYoutubeVideos";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, VideoState } from "@prisma/client";
+import { Suspense } from "react";
 
-// Initialize Prisma client
-const prisma = new PrismaClient();
+// Types for our enhanced YouTube videos with state information
+type YoutubeVideo = {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  channelTitle: string;
+  publishedAt: string;
+  videoUrl: string;
+  duration: string;
+  durationSeconds: number;
+  theme?: string;
+  state?: string;
+};
 
-// This page is a Server Component, so we can use async directly.
-export default async function Page() {
-  // Récupérer les vidéos de YouTube
-  const youtubeVideos = await getYoutubeVideos();
+type EnhancedYoutubeVideo = YoutubeVideo & {
+  state: string;
+  duration: string;
+  durationSeconds: number | null;
+};
 
-  // Vérifier si le modèle VideoState existe dans Prisma
-  let videoStates: { videoId: string; state: string; duration: string | null; durationSeconds: number | null }[] = [];
+// Data fetching function to keep separation of concerns
+async function fetchVideosWithState(): Promise<EnhancedYoutubeVideo[]> {
+  const prisma = new PrismaClient();
 
   try {
-    // Récupérer les états des vidéos depuis la base de données
-    // Sans vérification préalable, on utilise try/catch pour gérer les erreurs
-    videoStates = await prisma.videoState.findMany({
+    // Fetch YouTube videos from our App Router API
+    const apiUrl = process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000'
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    const response = await fetch(`${apiUrl}/api/youtube`, {
+      next: { revalidate: 3600 } // Revalidate cache every hour
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch videos: ${response.status}`);
+    }
+
+    const youtubeVideos: YoutubeVideo[] = await response.json();
+
+    // Fetch video states from database
+    const videoStates = await prisma.videoState.findMany({
       select: {
         videoId: true,
         state: true,
@@ -24,29 +54,48 @@ export default async function Page() {
         durationSeconds: true
       }
     });
+
+    // Create a map for quick lookup of video states by ID
+    const videoStateMap = new Map<string, VideoState>(
+      videoStates.map(state => [state.videoId, state as VideoState])
+    );
+
+    // Enhance videos with state information
+    return youtubeVideos.map(video => {
+      const stateData = videoStateMap.get(video.id);
+      return {
+        ...video,
+        state: stateData?.state || video.state || "A voir !",
+        duration: stateData?.duration || video.duration,
+        durationSeconds: stateData?.durationSeconds || video.durationSeconds,
+      };
+    });
   } catch (error) {
-    console.error("Error fetching video states:", error);
-    // Continuer sans les états
+    console.error("Error fetching videos and states:", error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
   }
+}
 
-  // Créer un Map pour accéder rapidement aux données d'une vidéo par son ID
-  const videoStateMap = new Map(
-    videoStates.map(state => [state.videoId, state])
+// Loading component for Suspense fallback
+function LoadingVideos() {
+  return (
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <div className="text-xl text-gray-300">Chargement des vidéos...</div>
+    </div>
   );
+}
 
-  // Mettre à jour les états des vidéos et préserver les informations de durée
-  const videosWithState = youtubeVideos.map(video => {
-    const stateData = videoStateMap.get(video.id);
-    return {
-      ...video,
-      state: stateData?.state || video.state || "A voir !",
-      // Conserver les informations de durée de l'API YouTube
-      // mais utiliser celles de la base de données si disponibles
-      duration: stateData?.duration || video.duration,
-      durationSeconds: stateData?.durationSeconds || video.durationSeconds,
-    };
-  });
+// ContentSection component renders the actual content
+async function ContentSection() {
+  const videosWithState = await fetchVideosWithState();
 
+  return <Veille youtubeVideos={videosWithState} />;
+}
+
+// Main page component
+export default function Page() {
   return (
     <main className="min-h-screen bg-black text-white relative">
       {/* Grille en perspective en arrière-plan */}
@@ -64,7 +113,11 @@ export default async function Page() {
           </p>
         </header>
 
-        <Veille youtubeVideos={videosWithState} />
+        <ErrorBoundary fallback={VideoError}>
+          <Suspense fallback={<LoadingVideos />}>
+            <ContentSection />
+          </Suspense>
+        </ErrorBoundary>
 
         <footer className="mt-16 pt-8 border-t border-gray-700 text-center text-gray-400">
           <p>Développé avec Next.js, Tailwind CSS et l&apos;API YouTube</p>

@@ -1,4 +1,4 @@
-import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
+import { YoutubeVideo } from "@/app/api/youtube/getYoutubeVideos/route";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -94,6 +94,38 @@ export class YoutubeVideoCache {
           lastFetched: new Date(),
         },
       });
+    }
+  }
+
+  /**
+   * Gets all videos from cache
+   */
+  static async getVideos(): Promise<YoutubeVideo[] | null> {
+    try {
+      const cachedVideos = await prisma.youtubeVideoCache.findMany({
+        orderBy: { publishedAt: "desc" },
+      });
+
+      if (cachedVideos.length === 0) {
+        return null;
+      }
+
+      return cachedVideos.map((video) => ({
+        id: video.videoId,
+        title: video.title,
+        description: video.description,
+        thumbnailUrl: video.thumbnailUrl,
+        channelTitle: video.channelTitle,
+        publishedAt: video.publishedAt,
+        videoUrl: video.videoUrl,
+        duration: video.duration,
+        durationSeconds: video.durationSeconds,
+        theme: video.theme || undefined,
+        state: video.state,
+      }));
+    } catch (error) {
+      console.error("Error getting videos from cache:", error);
+      return null;
     }
   }
 }
