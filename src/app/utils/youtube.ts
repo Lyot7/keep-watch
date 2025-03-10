@@ -1,37 +1,43 @@
 /**
  * YouTube API utility functions
  */
+import { YoutubeApi } from "@/services/youtube/api";
+import { YoutubeVideo } from "@/types/youtube";
 
-export interface YoutubeVideo {
-  id: string;
-  title: string;
-  description: string;
-  thumbnail: string;
-  publishedAt: string;
-  channelTitle: string;
-}
+// Define channel IDs for Melvynx and Shubham Sharma
+const MELVYNX_CHANNEL_ID = "UC5HDIVwuqoIuKKw-WbQ4CvA"; // Melvynx channel ID
+const SHUBHAM_SHARMA_CHANNEL_ID = "UCbTw29mcP12YlTt1EpUaVJw"; // Shubham Sharma channel ID
 
 /**
- * Fetch YouTube videos from the YouTube API
+ * Fetch YouTube videos from Melvynx and Shubham Sharma channels
  */
 export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
-  // Simulate API call for now
-  return [
-    {
-      id: "video1",
-      title: "Introduction to Next.js",
-      description: "Learn the basics of Next.js",
-      thumbnail: "https://i.ytimg.com/vi/sample/default.jpg",
-      publishedAt: new Date().toISOString(),
-      channelTitle: "Tech Channel",
-    },
-    {
-      id: "video2",
-      title: "Docker for Beginners",
-      description: "Docker containerization explained",
-      thumbnail: "https://i.ytimg.com/vi/sample2/default.jpg",
-      publishedAt: new Date().toISOString(),
-      channelTitle: "DevOps Channel",
-    },
-  ];
+  try {
+    const api = new YoutubeApi();
+
+    try {
+      // Fetch videos from both channels
+      const [melvynxVideos, shubhamVideos] = await Promise.all([
+        api.getLatestVideos(MELVYNX_CHANNEL_ID, 10),
+        api.getLatestVideos(SHUBHAM_SHARMA_CHANNEL_ID, 10),
+      ]);
+
+      // Combine both results
+      const combinedVideos = [...melvynxVideos, ...shubhamVideos];
+
+      // Sort by published date (newest first)
+      return combinedVideos.sort(
+        (a, b) =>
+          new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+      );
+    } finally {
+      // Always close the API connection
+      await api.close();
+    }
+  } catch (error) {
+    console.error("Error fetching videos from specific channels:", error);
+
+    // Return empty array in case of failure instead of hard-coding sample data
+    return [];
+  }
 }

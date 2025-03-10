@@ -1,0 +1,7 @@
+{
+  "name": "keepwatch-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for KeepWatch application",
+  "type": "module",
+  "private": true
+}

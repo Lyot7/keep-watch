@@ -27,13 +27,22 @@ type EnhancedYoutubeVideo = YoutubeVideo & {
 
 // Data fetching function to keep separation of concerns
 async function fetchVideosWithState(): Promise<EnhancedYoutubeVideo[]> {
-  const prisma = new PrismaClient();
+  // Create a new PrismaClient instance with the correct connection string
+  const prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      },
+    },
+  });
 
   try {
     // Fetch YouTube videos from our App Router API
     const apiUrl = process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000'
       : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+    console.log("Connecting to API at:", apiUrl);
 
     const response = await fetch(`${apiUrl}/api/youtube`, {
       next: { revalidate: 3600 } // Revalidate cache every hour
@@ -44,8 +53,10 @@ async function fetchVideosWithState(): Promise<EnhancedYoutubeVideo[]> {
     }
 
     const youtubeVideos: YoutubeVideo[] = await response.json();
+    console.log(`Fetched ${youtubeVideos.length} videos from YouTube API`);
 
     // Fetch video states from database
+    console.log("Fetching video states from database...");
     const videoStates = await prisma.videoState.findMany({
       select: {
         videoId: true,
@@ -54,6 +65,7 @@ async function fetchVideosWithState(): Promise<EnhancedYoutubeVideo[]> {
         durationSeconds: true
       }
     });
+    console.log(`Found ${videoStates.length} video states in database`);
 
     // Create a map for quick lookup of video states by ID
     const videoStateMap = new Map<string, VideoState>(
@@ -97,12 +109,7 @@ async function ContentSection() {
 // Main page component
 export default function Page() {
   return (
-    <main className="min-h-screen bg-black text-white relative">
-      {/* Grille en perspective en arrière-plan */}
-      <div className="perspective-grid">
-        <div className="grid-lines"></div>
-      </div>
-
+    <main className="min-h-screen bg-black text-white relative overflow-x-hidden">
       <div className="max-w-7xl mx-auto relative z-10 p-6">
         <header className="py-12 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">

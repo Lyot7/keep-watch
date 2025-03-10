@@ -5,20 +5,28 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=${NODE_ENV:-development}
+        - ENV_FILE=${ENV_FILE:-.env.local}
     container_name: keepwatch-app
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/keepwatch?schema=public&sslmode=prefer"
-      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY}
-      YOUTUBE_CACHE_TTL_HOURS: ${YOUTUBE_CACHE_TTL_HOURS:-24}
-      YOUTUBE_MAX_RESULTS_PER_CHANNEL: ${YOUTUBE_MAX_RESULTS_PER_CHANNEL:-10}
-      YOUTUBE_DAILY_QUOTA_LIMIT: ${YOUTUBE_DAILY_QUOTA_LIMIT:-8000}
-    # Comment out these volume mounts for production use
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
+    env_file:
+      - ${ENV_FILE:-.env.local}
+    volumes:
+      # Mount source code but not node_modules or .next
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./prisma:/app/prisma
+      - ./scripts:/app/scripts
+      - ./next.config.js:/app/next.config.js
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./tailwind.config.ts:/app/tailwind.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      # Use a named volume for the .next directory
+      - next-build-cache:/app/.next
+      # Explicitly exclude node_modules to use the container's version
+      - /app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -42,12 +50,14 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - keepwatch-postgres-data:/var/lib/postgresql/data
-    command:
-      - "postgres"
-      - "-c"
-      - "listen_addresses=*"
-      - "-c"
-      - "log_statement=all"
+      - ./prisma:/prisma
+      - ./scripts:/scripts
+    command: >
+      sh -c "postgres -c listen_addresses=* -c log_statement=all &
+      sleep 5 &&
+      npx prisma migrate reset --force &&
+      node scripts/seed-channels.js &&
+      tail -f /dev/null"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -57,3 +67,4 @@ services:
 
 volumes:
   keepwatch-postgres-data:
+  next-build-cache:

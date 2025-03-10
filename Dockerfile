@@ -1,65 +1,80 @@
-FROM node:20-alpine AS builder
+FROM node:18-alpine
+
+# Add build arguments
+ARG NODE_ENV=development
+ARG ENV_FILE=.env.local
 
 WORKDIR /app
 
-# Install necessary tools for PostgreSQL client, OpenSSL, and healthcheck
+# Install necessary tools for PostgreSQL client and other dependencies
 RUN apk add --no-cache postgresql-client curl openssl openssl-dev
 
 # Copy package.json and package-lock.json first to leverage Docker cache
-COPY package*.json ./
+COPY package.json package-lock.json ./
+
 RUN npm ci
+
+# Copy Tailwind and PostCSS config files before generating Prisma client
+COPY tailwind.config.ts postcss.config.mjs ./
 
 # Generate Prisma client
 COPY prisma ./prisma/
 RUN npx prisma generate
 
-# Copy the rest of the application files
+# Copy the rest of the application
 COPY . .
 
-# Skip database-dependent build steps in production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV SKIP_ENV_VALIDATION=true
-ENV SKIP_BUILD_STATIC_GENERATION=true
-RUN npm run build
-
-# Production image
-FROM node:20-alpine AS runner
-WORKDIR /app
-
-# Install necessary tools for PostgreSQL client
-RUN apk add --no-cache postgresql-client curl openssl openssl-dev
-
-# Copy only necessary files from the builder stage
-COPY --from=builder /app/next.config.js ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/package.json ./package.json
-
-# Create a startup script
+# Create and set permissions for entrypoint script
 RUN echo '#!/bin/sh' > /usr/local/bin/docker-entrypoint.sh && \
-    echo 'echo "🔍 Waiting for PostgreSQL to be ready..."' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'until pg_isready -h postgres -p 5432 -U postgres; do' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo '  echo "PostgreSQL not ready yet..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'set -e' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Wait for PostgreSQL to be ready' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'MAX_RETRIES=30' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'RETRIES=0' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'until pg_isready -h postgres -p 5432 -U postgres || [ $RETRIES -eq $MAX_RETRIES ]; do' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '  echo "Waiting for postgres to be ready... ($RETRIES/$MAX_RETRIES)"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '  RETRIES=$((RETRIES+1))' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '  sleep 1' >> /usr/local/bin/docker-entrypoint.sh && \
     echo 'done' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'echo "✅ PostgreSQL is ready!"' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'echo "🔄 Setting up database..."' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'npx prisma migrate deploy || { echo "⚠️ Database setup failed but continuing..."; }' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Check if we reached max retries' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'if [ $RETRIES -eq $MAX_RETRIES ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '  echo "Warning: PostgreSQL did not become ready in time, but will continue with DB setup anyway"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
     echo '' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'echo "🚀 Starting application..."' >> /usr/local/bin/docker-entrypoint.sh && \
-    echo 'exec "$@"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Try to run prisma migration/deploy' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'npx prisma migrate deploy || echo "Warning: Prisma migration failed, but continuing startup"' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Set environment variables for Next.js' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'export NODE_ENV=$NODE_ENV' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'export NEXT_TELEMETRY_DISABLED=1' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'export TAILWIND_MODE=watch' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'export NEXT_RUNTIME=nodejs' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Ensure the .next directory exists and is empty before starting' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'mkdir -p .next' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'rm -rf .next/cache .next/server .next/static' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Setup CSS processing' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'echo "Initializing Tailwind CSS..."' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'npx tailwindcss init -p' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '# Start Next.js server based on environment' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'if [ "$NODE_ENV" = "development" ]; then' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '  exec npm run dev' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'else' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo '  exec npm start' >> /usr/local/bin/docker-entrypoint.sh && \
+    echo 'fi' >> /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Install required libraries for Prisma
-ENV PRISMA_ENGINES_MIRROR=https://prisma-builds.s3.eu-central-1.amazonaws.com
-ENV NODE_ENV=production
+# Set the environment variables for Next.js
+ENV HOST=0.0.0.0 
 ENV PORT=3000
+ENV NODE_ENV=$NODE_ENV
+ENV TAILWIND_MODE=watch
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_RUNTIME=nodejs
 
 EXPOSE 3000
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["node", "server.js"] 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"] 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import BackgroundGrid from "./components/BackgroundGrid";
-// Only import styles, not globals.css
+// Import styles.css which contains Tailwind directives
 import "./styles.css";
 
 const inter = Inter({
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} font-sans bg-black text-white antialiased`}>
         <BackgroundGrid />
         {children}
       </body>
