@@ -2,7 +2,7 @@
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { decodeHtml } from "@/utils/decodeHtml";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiEdit } from "react-icons/fi";
 
 interface ItemsByStateProps {
@@ -16,6 +16,7 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
   const [cardWidth, setCardWidth] = useState(0);
   const [cardHeight, setCardHeight] = useState(0);
   const cardRef = useRef<HTMLLIElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Fonction pour convertir une date formatée (ex: "15 Janvier 2025") en objet Date
   const parseFormattedDate = (dateString: string): Date => {
@@ -95,6 +96,27 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
       return dateB.getTime() - dateA.getTime(); // Tri décroissant (plus récent d'abord)
     });
 
+  // Ajouter un écouteur d'événements global pour fermer la modale en cliquant en dehors
+  useEffect(() => {
+    if (modalVisible) {
+      const handleGlobalClick = (e: MouseEvent) => {
+        // Vérifier si la cible du clic est en dehors de la modale
+        if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+          setModalVisible(null);
+        }
+      };
+
+      // Ajouter l'écouteur avec un petit délai pour éviter de fermer immédiatement
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleGlobalClick);
+      }, 100);
+
+      return () => {
+        document.removeEventListener('mousedown', handleGlobalClick);
+      };
+    }
+  }, [modalVisible]);
+
   return (
     <div>
       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
@@ -151,6 +173,7 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                     onClick={closeModal}
                   ></div>
                   <div
+                    ref={modalRef}
                     className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col justify-center"
                     style={{
                       width: `${cardWidth}px`,
@@ -158,14 +181,16 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                       maxWidth: '90vw',
                       maxHeight: '90vh'
                     }}
-                    onClick={(e) => e.stopPropagation()}
                   >
                     <div className="p-4 flex flex-col justify-center items-center h-full">
                       <h3 className="text-lg font-medium text-white mb-4">Sélectionnez le nouvel état</h3>
 
                       <div className="grid grid-cols-2 gap-3 w-full">
                         <button
-                          onClick={() => handleUpdateState(video.id, "Impressionnant", video.duration, video.durationSeconds)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateState(video.id, "Impressionnant", video.duration, video.durationSeconds);
+                          }}
                           disabled={updatingState === video.id}
                           className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Impressionnant"
                             ? 'bg-purple-600'
@@ -177,7 +202,10 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                         </button>
 
                         <button
-                          onClick={() => handleUpdateState(video.id, "Recommander", video.duration, video.durationSeconds)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateState(video.id, "Recommander", video.duration, video.durationSeconds);
+                          }}
                           disabled={updatingState === video.id}
                           className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Recommander"
                             ? 'bg-green-600'
@@ -189,7 +217,10 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                         </button>
 
                         <button
-                          onClick={() => handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds);
+                          }}
                           disabled={updatingState === video.id}
                           className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "A voir !"
                             ? 'bg-blue-600'
@@ -201,7 +232,10 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                         </button>
 
                         <button
-                          onClick={() => handleUpdateState(video.id, "Ne pas recommander", video.duration, video.durationSeconds)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateState(video.id, "Ne pas recommander", video.duration, video.durationSeconds);
+                          }}
                           disabled={updatingState === video.id}
                           className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Ne pas recommander"
                             ? 'bg-red-600'
