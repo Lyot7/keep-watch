@@ -1,0 +1,55 @@
+FROM postgres:15
+
+# Install Node.js and npm
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy Prisma schema and generate client
+COPY prisma ./prisma/
+RUN npx prisma generate
+
+# Copy the rest of the application
+COPY . .
+
+# Set environment variables
+ENV NODE_ENV=development
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/keepwatch?schema=public"
+
+# Create a script to run both postgres and our setup
+RUN echo '#!/bin/bash\n\
+# Initialize the database\n\
+initdb -D /var/lib/postgresql/data\n\
+# Start postgres\n\
+postgres -D /var/lib/postgresql/data -c listen_addresses=* -c log_statement=all &\n\
+# Wait for postgres to be ready\n\
+sleep 5\n\
+# Create the database\n\
+createdb keepwatch\n\
+# Run migrations and seed\n\
+cd /app\n\
+npx prisma migrate reset --force\n\
+node scripts/seed-channels.js\n\
+# Keep the container running\n\
+tail -f /dev/null' > /usr/local/bin/docker-entrypoint.sh \
+    && chmod +x /usr/local/bin/docker-entrypoint.sh \
+    && chown postgres:postgres /usr/local/bin/docker-entrypoint.sh
+
+# Switch to postgres user
+USER postgres
+
+# Set the entrypoint
+ENTRYPOINT ["docker-entrypoint.sh"] 

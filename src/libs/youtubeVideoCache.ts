@@ -62,6 +62,20 @@ export class YoutubeVideoCache {
     videos: YoutubeVideo[],
     channelId: string
   ): Promise<void> {
+    // Ensure the channel exists first
+    await prisma.youtubeChannel.upsert({
+      where: { channelId },
+      update: {
+        lastUpdated: new Date(),
+      },
+      create: {
+        channelId,
+        title: videos[0]?.channelTitle || "Unknown Channel",
+        lastUpdated: new Date(),
+      },
+    });
+
+    // Now cache the videos
     for (const video of videos) {
       await prisma.youtubeVideoCache.upsert({
         where: { videoId: video.id },
