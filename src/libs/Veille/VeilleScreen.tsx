@@ -88,13 +88,10 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
       <div className="mt-8">
         {/* Afficher la catégorie "Impressionnant" uniquement si elle contient des vidéos */}
         {shouldShowCategory("Impressionnant") && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-4 text-center">
-              Vidéos à voir absolument
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold mb-8 mt-4 text-center">
+              Vidéos que je recommande fortement
             </h2>
-            <p className="mb-4 text-center text-gray-400">
-              Les vidéos qui m&apos;ont impressionné.
-            </p>
             <ItemsByState
               youtubeVideos={getFilteredVideosForState("Impressionnant")}
               state="Impressionnant"
@@ -104,13 +101,10 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
 
         {/* Afficher la catégorie "Recommander" uniquement si elle contient des vidéos */}
         {shouldShowCategory("Recommander") && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-4 text-center">
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold mb-8 mt-4 text-center">
               Vidéos Recommandées
             </h2>
-            <p className="mb-4 text-center text-gray-400">
-              Les vidéos que je recommande.
-            </p>
             <ItemsByState
               youtubeVideos={getFilteredVideosForState("Recommander")}
               state="Recommander"
@@ -120,13 +114,10 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
 
         {/* Afficher la catégorie "A voir !" uniquement si elle contient des vidéos */}
         {shouldShowCategory("A voir !") && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-4 text-center">
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold mb-8 mt-4 text-center">
               Vidéos À Voir
             </h2>
-            <p className="mb-4 text-center text-gray-400">
-              Les vidéos qu&apos;il faudrait que je regarde.
-            </p>
             <ItemsByState
               youtubeVideos={getFilteredVideosForState("A voir !")}
               state="A voir !"
@@ -136,13 +127,10 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
 
         {/* Afficher la catégorie "Ne pas recommander" uniquement si elle contient des vidéos */}
         {shouldShowCategory("Ne pas recommander") && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-4 text-center">
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold mb-8 mt-4 text-center">
               Vidéos à Éviter
             </h2>
-            <p className="mb-4 text-center text-gray-400">
-              Les vidéos que je ne recommande pas.
-            </p>
             <ItemsByState
               youtubeVideos={getFilteredVideosForState("Ne pas recommander")}
               state="Ne pas recommander"
