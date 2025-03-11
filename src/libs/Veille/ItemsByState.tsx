@@ -170,11 +170,19 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                         Impressionnant
                       </button>
                       <button
-                        onClick={() => handleUpdateState(video.id, "Nul", video.duration, video.durationSeconds)}
+                        onClick={() => handleUpdateState(
+                          video.id,
+                          "Ne pas recommander",
+                          video.duration,
+                          video.durationSeconds
+                        )}
                         disabled={updatingState === video.id}
-                        className={`p-2 rounded ${video.state === "Nul" ? 'bg-gray-600' : 'bg-red-600 hover:bg-red-700'} transition`}
+                        className={`p-2 rounded ${video.state === "Ne pas recommander"
+                          ? 'bg-gray-600'
+                          : 'bg-red-600 hover:bg-red-700'
+                          } transition`}
                       >
-                        Nul
+                        Ne pas recommander
                       </button>
                     </div>
 

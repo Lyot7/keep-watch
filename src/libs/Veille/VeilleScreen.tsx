@@ -1,5 +1,6 @@
 "use client";
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
+import { useState } from "react";
 import DashboardStats from "./DashboardStats";
 import ItemsByState from "./ItemsByState";
 
@@ -8,20 +9,85 @@ interface VeilleProps {
 }
 
 const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
+  // State to track active filters
+  const [activeStateFilters, setActiveStateFilters] = useState<string[]>([]);
+  const [activeThemeFilters, setActiveThemeFilters] = useState<string[]>([]);
+
   // Vérifier si une catégorie contient des vidéos
   const hasVideosWithState = (state: string): boolean => {
     return youtubeVideos.some(video => video.state === state);
   };
 
+  // Toggle a state filter when a dashboard stat is clicked
+  const toggleStateFilter = (state: string) => {
+    setActiveStateFilters(prev => {
+      if (prev.includes(state)) {
+        return prev.filter(filter => filter !== state);
+      } else {
+        return [...prev, state];
+      }
+    });
+  };
+
+  // Toggle a theme filter when a theme box is clicked
+  const toggleThemeFilter = (theme: string) => {
+    setActiveThemeFilters(prev => {
+      if (prev.includes(theme)) {
+        return prev.filter(filter => filter !== theme);
+      } else {
+        return [...prev, theme];
+      }
+    });
+  };
+
+  // Check if a video passes the current filters
+  const videoPassesFilters = (video: YoutubeVideo): boolean => {
+    // Check if video passes state filters
+    const passesStateFilter = activeStateFilters.length === 0 ||
+      (typeof video.state === 'string' && activeStateFilters.includes(video.state));
+
+    // Check if video passes theme filters
+    const passesThemeFilter = activeThemeFilters.length === 0 ||
+      (typeof video.theme === 'string' && activeThemeFilters.includes(video.theme));
+
+    // Video must pass both state and theme filters
+    return passesStateFilter && passesThemeFilter;
+  };
+
+  // Check if a category should be displayed based on active filters
+  const shouldShowCategory = (state: string): boolean => {
+    // If no filters are active, show all categories that have videos
+    if (activeStateFilters.length === 0 && activeThemeFilters.length === 0) {
+      return hasVideosWithState(state);
+    }
+
+    // Check if any videos in this state category pass all filters
+    return youtubeVideos.some(video =>
+      video.state === state && videoPassesFilters(video)
+    );
+  };
+
+  // Filter videos for a specific state category
+  const getFilteredVideosForState = (state: string): YoutubeVideo[] => {
+    return youtubeVideos.filter(video =>
+      video.state === state && videoPassesFilters(video)
+    );
+  };
+
   return (
     <section>
       {/* Afficher le dashboard avec les statistiques */}
-      <DashboardStats youtubeVideos={youtubeVideos} />
+      <DashboardStats
+        youtubeVideos={youtubeVideos}
+        activeStateFilters={activeStateFilters}
+        activeThemeFilters={activeThemeFilters}
+        onStateFilterToggle={toggleStateFilter}
+        onThemeFilterToggle={toggleThemeFilter}
+      />
 
-      {/* Sections de vidéos par catégorie */}
       <div className="mt-8">
         {/* Afficher la catégorie "Impressionnant" uniquement si elle contient des vidéos */}
-        {hasVideosWithState("Impressionnant") && (
+        {shouldShowCategory("Impressionnant") && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-4 text-center">
               Vidéos à voir absolument
@@ -29,12 +95,15 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
             <p className="mb-4 text-center text-gray-400">
               Les vidéos qui m&apos;ont impressionné.
             </p>
-            <ItemsByState youtubeVideos={youtubeVideos} state="Impressionnant" />
+            <ItemsByState
+              youtubeVideos={getFilteredVideosForState("Impressionnant")}
+              state="Impressionnant"
+            />
           </div>
         )}
 
         {/* Afficher la catégorie "Recommander" uniquement si elle contient des vidéos */}
-        {hasVideosWithState("Recommander") && (
+        {shouldShowCategory("Recommander") && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-4 text-center">
               Vidéos Recommandées
@@ -42,12 +111,15 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
             <p className="mb-4 text-center text-gray-400">
               Les vidéos que je recommande.
             </p>
-            <ItemsByState youtubeVideos={youtubeVideos} state="Recommander" />
+            <ItemsByState
+              youtubeVideos={getFilteredVideosForState("Recommander")}
+              state="Recommander"
+            />
           </div>
         )}
 
         {/* Afficher la catégorie "A voir !" uniquement si elle contient des vidéos */}
-        {hasVideosWithState("A voir !") && (
+        {shouldShowCategory("A voir !") && (
           <div className="mb-12">
             <h2 className="text-2xl font-bold mb-4 text-center">
               Vidéos À Voir
@@ -55,16 +127,40 @@ const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
             <p className="mb-4 text-center text-gray-400">
               Les vidéos qu&apos;il faudrait que je regarde.
             </p>
-            <ItemsByState youtubeVideos={youtubeVideos} state="A voir !" />
+            <ItemsByState
+              youtubeVideos={getFilteredVideosForState("A voir !")}
+              state="A voir !"
+            />
           </div>
         )}
 
-        {/* Message si aucune vidéo n'est trouvée dans aucune catégorie */}
-        {!hasVideosWithState("Impressionnant") && !hasVideosWithState("Recommander") && !hasVideosWithState("A voir !") && (
-          <p className="text-center text-xl text-gray-400 py-10">
-            Aucune vidéo trouvée. Veuillez vérifier votre connexion à l&apos;API YouTube ou ajouter des chaînes à suivre.
-          </p>
+        {/* Afficher la catégorie "Ne pas recommander" uniquement si elle contient des vidéos */}
+        {shouldShowCategory("Ne pas recommander") && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold mb-4 text-center">
+              Vidéos à Éviter
+            </h2>
+            <p className="mb-4 text-center text-gray-400">
+              Les vidéos que je ne recommande pas.
+            </p>
+            <ItemsByState
+              youtubeVideos={getFilteredVideosForState("Ne pas recommander")}
+              state="Ne pas recommander"
+            />
+          </div>
         )}
+
+        {/* Message si aucune vidéo ne correspond aux filtres actifs */}
+        {!shouldShowCategory("Impressionnant") &&
+          !shouldShowCategory("Recommander") &&
+          !shouldShowCategory("A voir !") &&
+          !shouldShowCategory("Ne pas recommander") && (
+            <p className="text-center text-xl text-gray-400 py-10">
+              Aucune vidéo ne correspond aux filtres sélectionnés.
+              {(activeStateFilters.length > 0 || activeThemeFilters.length > 0) &&
+                " Essayez de modifier vos filtres."}
+            </p>
+          )}
       </div>
     </section>
   );
