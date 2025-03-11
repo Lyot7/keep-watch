@@ -1,7 +1,7 @@
 "use client";
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { decodeHtml } from "@/utils/decodeHtml";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiClock, FiClock as FiDuration, FiPieChart, FiStar, FiTag, FiThumbsDown, FiThumbsUp } from "react-icons/fi";
 
 interface DashboardStatsProps {
@@ -138,6 +138,14 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     },
   ];
 
+  // État pour le rendu côté client uniquement
+  const [isClient, setIsClient] = useState(false);
+
+  // S'assurer que le rendu est cohérent entre serveur et client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   // Trier les thèmes par nombre de vidéos (du plus grand au plus petit)
   const sortedThemes = Object.entries(countByTheme)
     .sort((a, b) => b[1] - a[1]);
@@ -158,7 +166,8 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 
   // Création du donut chart avec CSS
   useEffect(() => {
-    if (!donutChartRef.current) return;
+    // Ne s'exécute que côté client
+    if (!donutChartRef.current || !isClient) return;
 
     // Nettoyer les anciens styles
     const oldStyle = document.getElementById('donut-chart-style');
@@ -191,19 +200,19 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       : 'conic-gradient(#4b5563 0deg 360deg)';
 
     style.textContent = `
-      .donut-chart-content {
+      :root {
+        --color-purple: #9333ea;
+        --color-green: #16a34a;
+        --color-blue: #2563eb;
+        --color-red: #dc2626;
+      }
+      .donut-chart-container {
         background: ${conicGradient};
       }
     `;
 
     document.head.appendChild(style);
-
-    return () => {
-      if (document.getElementById('donut-chart-style')) {
-        document.head.removeChild(document.getElementById('donut-chart-style')!);
-      }
-    };
-  }, [categoryStats, totalVideos]);
+  }, [categoryStats, isClient]); // Ajouter isClient aux dépendances
 
   return (
     <div className="mb-10 bg-gray-800 bg-opacity-50 rounded-xl p-6 shadow-lg border border-gray-700 backdrop-blur-sm">
@@ -221,10 +230,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
           {hasActiveFilters && (
             <button
               onClick={resetAllFilters}
-              className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-sm transition flex items-center"
+              className="flex items-center px-4 py-2 bg-gray-700 bg-opacity-50 rounded-lg hover:bg-gray-600 transition-colors"
             >
-              <span className="mr-1">Réinitialiser</span>
-              <span className="inline-flex items-center justify-center bg-blue-500 text-xs w-5 h-5 rounded-full">
+              <FiPieChart className="text-blue-400 mr-2" size={20} />
+              <span className="text-lg font-medium mr-2">Réinitialiser</span>
+              <span className="inline-flex items-center justify-center bg-blue-500 text-xs font-semibold w-5 h-5 rounded-full">
                 {activeStateFilters.length + activeThemeFilters.length}
               </span>
             </button>
@@ -237,25 +247,21 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
         <div className="bg-gray-800 bg-opacity-70 rounded-xl p-5 border border-gray-700">
           <h3 className="text-lg font-medium mb-4 text-blue-300">Répartition</h3>
 
-          <div
-            ref={donutChartRef}
-            className="relative mx-auto"
-            style={{
-              width: '200px',
-              height: '200px',
-              '--color-purple': '#9333ea',
-              '--color-green': '#16a34a',
-              '--color-blue': '#2563eb',
-              '--color-red': '#dc2626'
-            } as React.CSSProperties}
-          >
-            {/* Donut chart avec conic-gradient */}
-            <div
-              className="donut-chart-content absolute inset-0 rounded-full"
-              style={{
-                clipPath: 'circle(50%)',
-              }}
-            />
+          <div className="relative mx-auto" style={{ width: '200px', height: '200px' }}>
+            {/* Rendu conditionnel du donut chart en fonction de isClient */}
+            {isClient ? (
+              <div className="donut-chart-container absolute inset-0 rounded-full" ref={donutChartRef}
+                style={{
+                  clipPath: 'circle(50%)',
+                }}
+              ></div>
+            ) : (
+              <div className="absolute inset-0 rounded-full bg-gray-800" ref={donutChartRef}
+                style={{
+                  clipPath: 'circle(50%)',
+                }}
+              ></div>
+            )}
 
             {/* Trou au milieu pour faire un donut */}
             <div className="absolute inset-0 flex items-center justify-center flex-col bg-gray-800 rounded-full"
@@ -288,51 +294,83 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
         {/* Middle column with stats */}
         <div className="grid grid-cols-2 gap-4">
           {categoryStats.map((stat) => {
-            // Déterminer les couleurs spécifiques à chaque état pour un style cohérent
-            const borderColor = activeStateFilters.includes(stat.stateKey)
-              ? stat.bgColor === 'purple' ? 'border-purple-500'
-                : stat.bgColor === 'green' ? 'border-green-500'
-                  : stat.bgColor === 'blue' ? 'border-blue-500'
-                    : stat.bgColor === 'red' ? 'border-red-500'
-                      : 'border-gray-700'
-              : 'border-gray-700 hover:border-gray-600';
+            // Base classes statiques qui sont les mêmes côté serveur et client
+            const baseCardClass = "bg-gray-800 bg-opacity-90 rounded-xl p-4 flex flex-col border transition-all duration-200 shadow-md cursor-pointer";
+            const baseIconClass = "rounded-full p-2 bg-gray-900";
 
-            const ringColor = activeStateFilters.includes(stat.stateKey)
-              ? stat.bgColor === 'purple' ? 'ring-1 ring-purple-400/50'
-                : stat.bgColor === 'green' ? 'ring-1 ring-green-400/50'
-                  : stat.bgColor === 'blue' ? 'ring-1 ring-blue-400/50'
-                    : stat.bgColor === 'red' ? 'ring-1 ring-red-400/50'
-                      : ''
-              : '';
+            // Si côté client, on peut ajouter des classes conditionnelles
+            if (isClient) {
+              const isActive = activeStateFilters.includes(stat.stateKey);
+              let statCardClasses = baseCardClass;
+              let iconBgClass = baseIconClass;
 
-            const iconBgColor = activeStateFilters.includes(stat.stateKey)
-              ? stat.bgColor === 'purple' ? 'bg-purple-900/60'
-                : stat.bgColor === 'green' ? 'bg-green-900/60'
-                  : stat.bgColor === 'blue' ? 'bg-blue-900/60'
-                    : stat.bgColor === 'red' ? 'bg-red-900/60'
-                      : 'bg-gray-900'
-              : 'bg-gray-900';
+              if (isActive) {
+                // Appliquer des styles spécifiques pour chaque état actif
+                switch (stat.bgColor) {
+                  case 'purple':
+                    statCardClasses += " border-purple-500 ring-1 ring-purple-400/50";
+                    iconBgClass = baseIconClass.replace("bg-gray-900", "bg-purple-900/60");
+                    break;
+                  case 'green':
+                    statCardClasses += " border-green-500 ring-1 ring-green-400/50";
+                    iconBgClass = baseIconClass.replace("bg-gray-900", "bg-green-900/60");
+                    break;
+                  case 'blue':
+                    statCardClasses += " border-blue-500 ring-1 ring-blue-400/50";
+                    iconBgClass = baseIconClass.replace("bg-gray-900", "bg-blue-900/60");
+                    break;
+                  case 'red':
+                    statCardClasses += " border-red-500 ring-1 ring-red-400/50";
+                    iconBgClass = baseIconClass.replace("bg-gray-900", "bg-red-900/60");
+                    break;
+                }
+              } else {
+                statCardClasses += " border-gray-700 hover:border-gray-600";
+              }
 
-            return (
-              <div
-                key={stat.name}
-                className={`bg-gray-800 bg-opacity-90 rounded-xl p-4 flex flex-col border ${borderColor} ${ringColor} transition-all duration-200 shadow-md cursor-pointer`}
-                onClick={() => onStateFilterToggle(stat.stateKey)}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="font-medium text-base">{stat.name}</span>
-                  <div className={`rounded-full p-2 ${iconBgColor}`}>{stat.icon}</div>
+              return (
+                <div
+                  key={stat.name}
+                  className={statCardClasses}
+                  onClick={() => onStateFilterToggle(stat.stateKey)}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-medium text-base">{stat.name}</span>
+                    <div className={iconBgClass}>{stat.icon}</div>
+                  </div>
+                  <div className="text-3xl font-bold mb-3">{stat.count}</div>
+                  <div className="w-full bg-gray-900/80 rounded-full h-2 mb-2 overflow-hidden">
+                    <div
+                      className={stat.color + " h-2 rounded-full"}
+                      style={{ width: `${stat.percentage}%` }}
+                    />
+                  </div>
+                  <div className="text-gray-400 text-sm text-right">{stat.percentage.toFixed(1)}% du total</div>
                 </div>
-                <div className="text-3xl font-bold mb-3">{stat.count}</div>
-                <div className="w-full bg-gray-900/80 rounded-full h-2 mb-2 overflow-hidden">
-                  <div
-                    className={`${stat.color} h-2 rounded-full`}
-                    style={{ width: `${stat.percentage}%` }}
-                  />
+              );
+            } else {
+              // Rendu côté serveur simple et statique
+              return (
+                <div
+                  key={stat.name}
+                  className={baseCardClass + " border-gray-700"}
+                  onClick={() => onStateFilterToggle(stat.stateKey)}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-medium text-base">{stat.name}</span>
+                    <div className={baseIconClass}>{stat.icon}</div>
+                  </div>
+                  <div className="text-3xl font-bold mb-3">{stat.count}</div>
+                  <div className="w-full bg-gray-900/80 rounded-full h-2 mb-2 overflow-hidden">
+                    <div
+                      className={stat.color + " h-2 rounded-full"}
+                      style={{ width: `${stat.percentage}%` }}
+                    />
+                  </div>
+                  <div className="text-gray-400 text-sm text-right">{stat.percentage.toFixed(1)}% du total</div>
                 </div>
-                <div className="text-gray-400 text-sm text-right">{stat.percentage.toFixed(1)}% du total</div>
-              </div>
-            );
+              );
+            }
           })}
         </div>
 
