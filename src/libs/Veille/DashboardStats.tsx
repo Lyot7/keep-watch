@@ -242,12 +242,12 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Left column with donut chart */}
-        <div className="bg-gray-800 bg-opacity-70 rounded-xl p-5 border border-gray-700">
-          <h3 className="text-lg font-medium mb-4 text-blue-300">Répartition</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        {/* Left column with donut chart - reduced to 3/12 */}
+        <div className="lg:col-span-3 bg-gray-800 bg-opacity-70 rounded-xl p-5 border border-gray-700 flex flex-col items-center justify-center">
+          <h3 className="text-lg font-medium mb-5 text-blue-300 text-center">Répartition</h3>
 
-          <div className="relative mx-auto" style={{ width: '200px', height: '200px' }}>
+          <div className="relative" style={{ width: '180px', height: '180px' }}>
             {/* Rendu conditionnel du donut chart en fonction de isClient */}
             {isClient ? (
               <div className="donut-chart-container absolute inset-0 rounded-full" ref={donutChartRef}
@@ -272,27 +272,59 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 
             {/* Overlay pour les interactions */}
             <div className="absolute inset-0 rounded-full" style={{ pointerEvents: 'none' }}>
-              {categoryStats.map((stat) => (
-                stat.percentage > 0 ? (
-                  <div
-                    key={stat.stateKey}
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      pointerEvents: 'all',
-                      cursor: 'pointer',
-                      zIndex: 10,
-                      opacity: 0, // Transparent mais cliquable
-                    }}
-                    onClick={() => onStateFilterToggle(stat.stateKey)}
-                  />
-                ) : null
-              ))}
+              {isClient && (
+                <>
+                  {categoryStats.map((stat, index) => {
+                    if (stat.percentage <= 0) return null;
+
+                    // Calculer l'angle de début et de fin pour cette catégorie
+                    let startAngle = 0;
+                    categoryStats.slice(0, index).forEach(prevStat => {
+                      if (prevStat.percentage > 0) {
+                        startAngle += (prevStat.percentage / 100) * 360;
+                      }
+                    });
+
+                    const angle = (stat.percentage / 100) * 360;
+
+                    return (
+                      <div
+                        key={stat.stateKey}
+                        className="absolute top-0 left-0 w-full h-full"
+                        onClick={() => onStateFilterToggle(stat.stateKey)}
+                        style={{
+                          clipPath: `path('M90,90 L90,0 A90,90 0 ${angle > 180 ? 1 : 0},1 ${90 + 90 * Math.cos((startAngle + angle) * (Math.PI / 180))
+                            },${90 + 90 * Math.sin((startAngle + angle) * (Math.PI / 180))
+                            } Z')`,
+                          transform: `rotate(${startAngle}deg)`,
+                          transformOrigin: 'center',
+                          cursor: 'pointer',
+                          zIndex: 10,
+                          // Bande de couleur subtile au survol pour aider au débogage visuel
+                          backgroundColor: 'rgba(255,255,255,0.0)',
+                          transition: 'background-color 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = `rgba(${stat.bgColor === 'purple' ? '147, 51, 234' :
+                            stat.bgColor === 'green' ? '22, 163, 74' :
+                              stat.bgColor === 'blue' ? '37, 99, 235' :
+                                stat.bgColor === 'red' ? '220, 38, 38' : '255, 255, 255'
+                            }, 0.1)`;
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.0)';
+                        }}
+                      />
+                    );
+                  })}
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Middle column with stats */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Middle column with stats - 6/12 */}
+        <div className="lg:col-span-6 grid grid-cols-2 gap-4">
           {categoryStats.map((stat) => {
             // Base classes statiques qui sont les mêmes côté serveur et client
             const baseCardClass = "bg-gray-800 bg-opacity-90 rounded-xl p-4 flex flex-col border transition-all duration-200 shadow-md cursor-pointer";
@@ -374,8 +406,8 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
           })}
         </div>
 
-        {/* Right column with activity feed */}
-        <div className="bg-gray-800 bg-opacity-70 rounded-xl p-5 border border-gray-700">
+        {/* Right column with activity feed - 3/12 */}
+        <div className="lg:col-span-3 bg-gray-800 bg-opacity-70 rounded-xl p-5 border border-gray-700">
           <h3 className="text-lg font-medium mb-4 text-blue-300 flex items-center">
             <FiClock className="mr-2" />
             Activité Récente
