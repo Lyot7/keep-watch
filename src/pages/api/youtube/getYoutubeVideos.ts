@@ -94,9 +94,7 @@ function formatDuration(durationSeconds: number): string {
 
 export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
   const apiKey = process.env.YOUTUBE_API_KEY;
-  const maxResultsPerChannel = parseInt(
-    process.env.YOUTUBE_MAX_RESULTS_PER_CHANNEL || "10"
-  );
+  const maxResultsPerChannel = 50; // Maximum autorisé par l'API YouTube
 
   if (!apiKey) {
     throw new Error("YouTube API Key not found in environment variables");

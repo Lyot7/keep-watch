@@ -20,9 +20,7 @@ export class ApiQuotaService {
     count: number = 1
   ): Promise<boolean> {
     const quotaNeeded = API_COSTS[operationType] * count;
-    const dailyQuotaLimit = parseInt(
-      process.env.YOUTUBE_DAILY_QUOTA_LIMIT || "8000"
-    );
+    const dailyQuotaLimit = Number.MAX_SAFE_INTEGER; // Valeur très élevée pour ignorer la limite
 
     // Get today's date at midnight UTC
     const today = new Date();
@@ -77,9 +75,7 @@ export class ApiQuotaService {
     limit: number;
     remaining: number;
   }> {
-    const dailyQuotaLimit = parseInt(
-      process.env.YOUTUBE_DAILY_QUOTA_LIMIT || "8000"
-    );
+    const dailyQuotaLimit = Number.MAX_SAFE_INTEGER; // Valeur très élevée pour ignorer la limite
 
     // Get today's date at midnight UTC
     const today = new Date();

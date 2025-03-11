@@ -15,6 +15,7 @@
     "db:start": "docker-compose up -d postgres",
     "db:stop": "docker-compose down postgres",
     "db:reset": "prisma migrate reset --force",
+    "youtube:reset-cache": "node --experimental-modules scripts/reset-youtube-cache.js",
     "demo": "npx ts-node scripts/demo.ts",
     "docker:dev": "docker-compose up --build",
     "docker:dev:rebuild": "docker-compose up --build --force-recreate",
