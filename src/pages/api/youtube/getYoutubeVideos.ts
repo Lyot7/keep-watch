@@ -104,7 +104,7 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&#x27;/g, "'")
     .replace(/&#x2F;/g, "/")
     .replace(/&#x3D;/g, "=")
-    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(Number(dec)));
 }
 
 export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
