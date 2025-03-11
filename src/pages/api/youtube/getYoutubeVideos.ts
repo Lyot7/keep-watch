@@ -55,7 +55,9 @@ interface ChannelConfig {
 
 const YOUTUBE_CHANNELS: ChannelConfig[] = [
   { id: "UC5HDIVwuqoIuKKw-WbQ4CvA", theme: "Développement" }, // Exemple: Melvynx
-  { id: "UCLKx4-_XO5sR0AO0j8ye7zQ", theme: "Automatisation & Productivité" }, // Exemple: Shubham Sharma
+  { id: "UCLKx4-_XO5sR0AO0j8ye7zQ", theme: "Productivité" }, // Exemple: Shubham Sharma
+  { id: "UCNiauGTV7XhkOpUAIXod4xA", theme: "Tech" }, // Exemple: Leo Duff
+
   // Ajoutez d'autres chaînes selon vos besoins
 ];
 

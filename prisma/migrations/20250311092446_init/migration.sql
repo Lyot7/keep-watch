@@ -119,7 +119,7 @@ ALTER TABLE "YoutubeVideoCache" ADD CONSTRAINT "YoutubeVideoCache_channelId_fkey
 ALTER TABLE "VideoState" ADD CONSTRAINT "VideoState_videoId_fkey" FOREIGN KEY ("videoId") REFERENCES "YoutubeVideoCache"("videoId") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "VideoTheme" ADD CONSTRAINT "VideoTheme_videoId_fkey" FOREIGN KEY ("videoId") REFERENCES "YoutubeVideoCache"("videoId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "VideoTheme" ADD CONSTRAINT "VideoTheme_themeId_fkey" FOREIGN KEY ("themeId") REFERENCES "Theme"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "VideoTheme" ADD CONSTRAINT "VideoTheme_themeId_fkey" FOREIGN KEY ("themeId") REFERENCES "Theme"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "VideoTheme" ADD CONSTRAINT "VideoTheme_videoId_fkey" FOREIGN KEY ("videoId") REFERENCES "YoutubeVideoCache"("videoId") ON DELETE RESTRICT ON UPDATE CASCADE;

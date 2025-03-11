@@ -15,20 +15,53 @@ export class YoutubeVideoCache {
     const cacheTtlHours = parseInt(process.env.YOUTUBE_CACHE_TTL_HOURS || "24");
     const cacheTtlMs = cacheTtlHours * 60 * 60 * 1000;
 
-    // Trouver la dernière vidéo mise en cache pour cette chaîne
-    const latestVideo = await prisma.youtubeVideoCache.findFirst({
+    // Get the most recent video from our cache
+    const latestCachedVideo = await prisma.youtubeVideoCache.findFirst({
       where: { channelId },
-      orderBy: { lastFetched: "desc" },
+      orderBy: { publishedAt: "desc" },
+      select: { publishedAt: true },
     });
 
-    // Si pas de vidéos en cache ou cache expiré, rafraîchir
-    if (!latestVideo) return true;
+    if (!latestCachedVideo) return true;
 
+    // Check if cache TTL has expired
     const now = new Date();
-    const lastFetched = new Date(latestVideo.lastFetched);
+    const lastFetched = new Date(latestCachedVideo.publishedAt);
     const timeDiff = now.getTime() - lastFetched.getTime();
 
-    return timeDiff > cacheTtlMs;
+    if (timeDiff > cacheTtlMs) {
+      // If cache is old, check latest video from YouTube API
+      const apiKey = process.env.YOUTUBE_API_KEY;
+
+      try {
+        const response = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet&order=date&maxResults=1&type=video`
+        );
+
+        if (!response.ok) {
+          console.log(`YouTube API error, using cache: ${response.statusText}`);
+          return false;
+        }
+
+        const data = await response.json();
+
+        if (!data.items || data.items.length === 0) {
+          console.log("No new videos found, using cache");
+          return false;
+        }
+
+        const latestYouTubeVideo = data.items[0].snippet.publishedAt;
+        const latestYouTubeDate = new Date(latestYouTubeVideo);
+
+        // Compare dates to see if there are new videos
+        return latestYouTubeDate > lastFetched;
+      } catch (error) {
+        console.error("Error checking for new videos:", error);
+        return false; // On error, use cache
+      }
+    }
+
+    return false;
   }
 
   /**
