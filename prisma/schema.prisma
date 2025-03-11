@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,101 +7,84 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Modèle pour stocker les chaînes YouTube
 model YoutubeChannel {
-  id            String    @id @default(uuid())
-  channelId     String    @unique // ID de la chaîne YouTube
-  title         String    // Titre de la chaîne
-  description   String?   @db.Text // Description de la chaîne
-  thumbnailUrl  String?   // URL de la vignette
-  subscriberCount Int?    // Nombre d'abonnés (approximatif)
-  lastUpdated   DateTime  @default(now()) // Dernière mise à jour
-  videos        YoutubeVideoCache[] // Relation avec les vidéos
-  isActive      Boolean   @default(true) // Si la chaîne est active pour la récupération
-  
+  id              String              @id @default(uuid())
+  channelId       String              @unique
+  title           String
+  description     String?
+  thumbnailUrl    String?
+  subscriberCount Int?
+  lastUpdated     DateTime            @default(now())
+  isActive        Boolean             @default(true)
+  videos          YoutubeVideoCache[]
+
   @@index([channelId])
 }
 
-// Modèle pour stocker les vidéos YouTube en cache
 model YoutubeVideoCache {
-  id              String   @id @default(uuid())
-  videoId         String   @unique // ID de la vidéo YouTube
-  title           String   // Titre de la vidéo
-  description     String   @db.Text // Description de la vidéo
-  thumbnailUrl    String   // URL de la vignette
-  channelTitle    String   // Titre de la chaîne
-  channelId       String   // ID de la chaîne
-  publishedAt     String   // Date de publication
-  videoUrl        String   // URL de la vidéo
-  duration        String   // Durée formatée
-  durationSeconds Int      // Durée en secondes
-  theme           String?  // Thème de la vidéo
-  state           String   @default("A voir !") // État par défaut
-  viewCount       Int?     // Nombre de vues (si disponible)
-  likeCount       Int?     // Nombre de likes (si disponible)
-  lastFetched     DateTime @default(now()) // Date de dernière récupération
-  
-  // Relations
+  id              String         @id @default(uuid())
+  videoId         String         @unique
+  title           String
+  description     String
+  thumbnailUrl    String
+  channelTitle    String
+  channelId       String
+  publishedAt     String
+  videoUrl        String
+  duration        String
+  durationSeconds Int
+  theme           String?
+  state           String         @default("A voir !")
+  viewCount       Int?
+  likeCount       Int?
+  lastFetched     DateTime       @default(now())
+  videoState      VideoState?
+  videoThemes     VideoTheme[]
   channel         YoutubeChannel @relation(fields: [channelId], references: [channelId])
-  videoState      VideoState?    // Relation avec l'état de la vidéo
-  videoThemes     VideoTheme[]   // Relation avec les thèmes
-  
+
   @@index([channelId])
   @@index([state])
   @@index([publishedAt])
 }
 
-// Modèle pour stocker l'état des vidéos
 model VideoState {
-  id              String   @id @default(uuid())
-  videoId         String   @unique
-  state           String   // "A voir !", "Vu", "🤯", etc.
-  duration        String?  // Durée formatée de la vidéo (ex: "10:30")
-  durationSeconds Int?     // Durée en secondes pour le filtrage
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  notes           String?  @db.Text // Notes personnelles sur la vidéo
-  rating          Int?     // Évaluation personnelle (1-5 étoiles)
-  
-  // Relation avec la vidéo
-  video           YoutubeVideoCache? @relation(fields: [videoId], references: [videoId])
+  id              String            @id @default(uuid())
+  videoId         String            @unique
+  state           String
+  duration        String?
+  durationSeconds Int?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  notes           String?
+  rating          Int?
+  video           YoutubeVideoCache @relation(fields: [videoId], references: [videoId])
 }
 
-// Modèle pour stocker les thèmes personnalisés
 model Theme {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String?  @db.Text
-  color       String?  // Couleur pour l'affichage (ex: "#FF5733")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  // Relation avec les associations vidéo-thème
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  color       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   videoThemes VideoTheme[]
 }
 
-// Modèle pour associer des vidéos à des thèmes personnalisés
 model VideoTheme {
-  id        String   @id @default(uuid())
+  id        String            @id @default(uuid())
   videoId   String
   themeId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  video     YoutubeVideoCache @relation(fields: [videoId], references: [videoId])
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
   theme     Theme             @relation(fields: [themeId], references: [id])
-  
-  // Indique que videoId et themeId doivent être uniques ensemble
+  video     YoutubeVideoCache @relation(fields: [videoId], references: [videoId])
+
   @@unique([videoId, themeId])
 }
 
-// Modèle pour le suivi de l'utilisation de l'API YouTube
 model ApiQuotaUsage {
   id          String   @id @default(uuid())
-  date        DateTime @default(now()) @db.Date // Date de l'utilisation
-  quotaUsed   Int      @default(0) // Unités de quota utilisées
-  description String?  // Description de l'utilisation
-  
-  @@unique([date])
-} 
+  date        DateTime @unique @default(now()) @db.Date
+  quotaUsed   Int      @default(0)
+  description String?
+}

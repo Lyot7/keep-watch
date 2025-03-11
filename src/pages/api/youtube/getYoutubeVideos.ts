@@ -105,8 +105,21 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
   // Récupérer les vidéos de chaque chaîne
   for (const channel of YOUTUBE_CHANNELS) {
     try {
+      // Get channel info from database
+      const channelInfo = await prisma.youtubeVideoCache.findFirst({
+        where: { channelId: channel.id },
+        select: { channelTitle: true },
+      });
+
+      console.log(
+        `\n📺 Processing channel ${channel.id} (${channel.theme}) - ${
+          channelInfo?.channelTitle || "Unknown"
+        }`
+      );
+
       // Vérifier si nous avons besoin de rafraîchir le cache pour cette chaîne
       const needsRefresh = await YoutubeVideoCache.needsRefresh(channel.id);
+      console.log(`🔄 Cache needs refresh: ${needsRefresh}`);
 
       // Si nous n'avons pas besoin de rafraîchir, utiliser le cache
       if (!needsRefresh) {
@@ -114,7 +127,9 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
           channel.id
         );
         allVideos.push(...cachedVideos);
-        console.log(`Utilisation du cache pour la chaîne ${channel.id}`);
+        console.log(
+          `📦 Using cached data: Found ${cachedVideos.length} videos in cache`
+        );
         continue;
       }
 
@@ -122,10 +137,10 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
       const hasQuotaForSearch = await ApiQuotaService.hasAvailableQuota(
         "SEARCH"
       );
+      console.log(`🎯 API quota available: ${hasQuotaForSearch}`);
+
       if (!hasQuotaForSearch) {
-        console.log(
-          `Quota API insuffisant pour la recherche sur la chaîne ${channel.id}`
-        );
+        console.log(`⚠️ Insufficient API quota for channel ${channel.id}`);
 
         // Utiliser le cache même s'il est périmé plutôt que de ne rien retourner
         const cachedVideos = await YoutubeVideoCache.getCachedVideos(
@@ -134,12 +149,13 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
         if (cachedVideos.length > 0) {
           allVideos.push(...cachedVideos);
           console.log(
-            `Utilisation du cache expiré pour la chaîne ${channel.id}`
+            `📦 Using expired cache: Found ${cachedVideos.length} videos`
           );
         }
         continue;
       }
 
+      console.log(`🌐 Fetching fresh data from YouTube API...`);
       // 1. Récupérer les IDs des vidéos via l'API Search avec limitation
       const response = await fetch(
         `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=${maxResultsPerChannel}&type=video`
