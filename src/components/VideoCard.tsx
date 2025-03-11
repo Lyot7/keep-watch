@@ -1,6 +1,7 @@
 "use client";
 
 import { VideoState } from "@/types/videoState";
+import { decodeHtml } from "@/utils/decodeHtml";
 import { useState } from "react";
 
 interface VideoCardProps {
@@ -44,15 +45,15 @@ export function VideoCard({ video }: VideoCardProps) {
       <div className="aspect-video relative mb-2">
         <iframe
           src={`https://www.youtube.com/embed/${video.videoId}`}
-          title={video.title || "YouTube video player"}
+          title={video.title ? decodeHtml(video.title) : "YouTube video player"}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           className="absolute top-0 left-0 w-full h-full rounded"
         />
       </div>
       <div className="space-y-2">
-        <h3 className="font-semibold text-lg line-clamp-2">{video.title}</h3>
-        <p className="text-sm text-gray-400">{video.channelTitle}</p>
+        <h3 className="font-semibold text-lg line-clamp-2">{video.title ? decodeHtml(video.title) : ''}</h3>
+        <p className="text-sm text-gray-400">{video.channelTitle ? decodeHtml(video.channelTitle) : ''}</p>
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-300">
             {video.duration || "Duration unknown"}

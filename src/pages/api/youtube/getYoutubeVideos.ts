@@ -92,6 +92,21 @@ function formatDuration(durationSeconds: number): string {
   }
 }
 
+// Helper function to decode HTML entities on the server side
+function decodeHtmlEntities(text: string): string {
+  if (!text) return "";
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, "/")
+    .replace(/&#x3D;/g, "=")
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
+}
+
 export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
   const apiKey = process.env.YOUTUBE_API_KEY;
   const maxResultsPerChannel = 50; // Maximum autorisé par l'API YouTube
@@ -234,10 +249,10 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
 
           return {
             id: item.id.videoId,
-            title: item.snippet.title,
-            description: item.snippet.description,
+            title: decodeHtmlEntities(item.snippet.title),
+            description: decodeHtmlEntities(item.snippet.description),
             thumbnailUrl: item.snippet.thumbnails.high.url,
-            channelTitle: item.snippet.channelTitle,
+            channelTitle: decodeHtmlEntities(item.snippet.channelTitle),
             publishedAt: formatDate(item.snippet.publishedAt),
             videoUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
             duration: details!.formattedDuration, // Le '!' est sûr car on filtre avant

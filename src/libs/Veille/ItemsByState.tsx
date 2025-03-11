@@ -1,5 +1,6 @@
 "use client";
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
+import { decodeHtml } from "@/utils/decodeHtml";
 import Image from "next/image";
 import { useState } from "react";
 import { FiEdit } from "react-icons/fi";
@@ -108,8 +109,8 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                 </div>
               </div>
               <div className="p-4">
-                <h2 className="text-xl font-semibold line-clamp-2 mb-2">{video.title}</h2>
-                <p className="text-gray-300 mb-2">{video.channelTitle}</p>
+                <h2 className="text-xl font-semibold line-clamp-2 mb-2">{decodeHtml(video.title)}</h2>
+                <p className="text-gray-300 mb-2">{decodeHtml(video.channelTitle)}</p>
 
                 <div className="flex justify-between items-center mt-1 mb-2">
                   <div>
@@ -144,7 +145,7 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                     onClick={(e) => e.stopPropagation()}
                   >
                     <h3 className="text-xl font-semibold mb-4">Modifier l&apos;état</h3>
-                    <p className="text-gray-300 mb-4 line-clamp-1">{video.title}</p>
+                    <p className="text-gray-300 mb-4 line-clamp-1">{decodeHtml(video.title)}</p>
 
                     <div className="flex flex-col gap-3">
                       <button
