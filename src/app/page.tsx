@@ -1,14 +1,22 @@
 import Veille from "@/libs/Veille/VeilleScreen";
-import { getYoutubeVideos } from "@/pages/api/youtube/getYoutubeVideos";
+import { getYoutubeVideos, YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { PrismaClient } from "@prisma/client";
+import { Suspense } from "react";
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
 
 // This page is a Server Component, so we can use async directly.
 export default async function Page() {
-  // Récupérer les vidéos de YouTube
-  const youtubeVideos = await getYoutubeVideos();
+  // Wrap in try/catch for better error handling
+  let youtubeVideos: YoutubeVideo[] = [];
+  try {
+    // Récupérer les vidéos de YouTube
+    youtubeVideos = await getYoutubeVideos();
+  } catch (error) {
+    console.error("Failed to fetch YouTube videos:", error);
+    // Continue with empty array
+  }
 
   // Vérifier si le modèle VideoState existe dans Prisma
   let videoStates: { videoId: string; state: string; duration: string | null; durationSeconds: number | null }[] = [];
@@ -64,7 +72,9 @@ export default async function Page() {
           </p>
         </header>
 
-        <Veille youtubeVideos={videosWithState} />
+        <Suspense fallback={<div>Chargement des vidéos...</div>}>
+          <Veille youtubeVideos={videosWithState} />
+        </Suspense>
 
         <footer className="mt-16 pt-8 border-t border-gray-700 text-center text-gray-400">
           <p>Développé avec Next.js, Tailwind CSS et l&apos;API YouTube</p>

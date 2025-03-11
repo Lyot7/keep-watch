@@ -108,179 +108,179 @@ function decodeHtmlEntities(text: string): string {
 }
 
 export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  const maxResultsPerChannel = 50; // Maximum autorisé par l'API YouTube
+  try {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    const maxResultsPerChannel = 50; // Maximum autorisé par l'API YouTube
 
-  if (!apiKey) {
-    throw new Error("YouTube API Key not found in environment variables");
-  }
+    if (!apiKey) {
+      console.error("YouTube API Key not found in environment variables");
+      return []; // Return empty array instead of throwing
+    }
 
-  const allVideos: YoutubeVideo[] = [];
+    const allVideos: YoutubeVideo[] = [];
 
-  // Récupérer les vidéos de chaque chaîne
-  for (const channel of YOUTUBE_CHANNELS) {
-    try {
-      // Get channel info from database
-      const channelInfo = await prisma.youtubeVideoCache.findFirst({
-        where: { channelId: channel.id },
-        select: { channelTitle: true },
-      });
+    // Récupérer les vidéos de chaque chaîne
+    for (const channel of YOUTUBE_CHANNELS) {
+      try {
+        // Get channel info from database
+        const channelInfo = await prisma.youtubeVideoCache.findFirst({
+          where: { channelId: channel.id },
+          select: { channelTitle: true },
+        });
 
-      console.log(
-        `\n📺 Processing channel ${channel.id} (${channel.theme}) - ${
-          channelInfo?.channelTitle || "Unknown"
-        }`
-      );
-
-      // Vérifier si nous avons besoin de rafraîchir le cache pour cette chaîne
-      const needsRefresh = await YoutubeVideoCache.needsRefresh(channel.id);
-      console.log(`🔄 Cache needs refresh: ${needsRefresh}`);
-
-      // Si nous n'avons pas besoin de rafraîchir, utiliser le cache
-      if (!needsRefresh) {
-        const cachedVideos = await YoutubeVideoCache.getCachedVideos(
-          channel.id
-        );
-        allVideos.push(...cachedVideos);
         console.log(
-          `📦 Using cached data: Found ${cachedVideos.length} videos in cache`
+          `\n📺 Processing channel ${channel.id} (${channel.theme}) - ${
+            channelInfo?.channelTitle || "Unknown"
+          }`
         );
-        continue;
-      }
 
-      // Vérifier si nous avons assez de quota pour les opérations API
-      const hasQuotaForSearch = await ApiQuotaService.hasAvailableQuota(
-        "SEARCH"
-      );
-      console.log(`🎯 API quota available: ${hasQuotaForSearch}`);
+        // Vérifier si nous avons besoin de rafraîchir le cache pour cette chaîne
+        const needsRefresh = await YoutubeVideoCache.needsRefresh(channel.id);
+        console.log(`🔄 Cache needs refresh: ${needsRefresh}`);
 
-      if (!hasQuotaForSearch) {
-        console.log(`⚠️ Insufficient API quota for channel ${channel.id}`);
-
-        // Utiliser le cache même s'il est périmé plutôt que de ne rien retourner
-        const cachedVideos = await YoutubeVideoCache.getCachedVideos(
-          channel.id
-        );
-        if (cachedVideos.length > 0) {
+        // Si nous n'avons pas besoin de rafraîchir, utiliser le cache
+        if (!needsRefresh) {
+          const cachedVideos = await YoutubeVideoCache.getCachedVideos(
+            channel.id
+          );
           allVideos.push(...cachedVideos);
           console.log(
-            `📦 Using expired cache: Found ${cachedVideos.length} videos`
+            `📦 Using cached data: Found ${cachedVideos.length} videos in cache`
+          );
+          continue;
+        }
+
+        // Vérifier si nous avons assez de quota pour les opérations API
+        const hasQuotaForSearch = await ApiQuotaService.hasAvailableQuota(
+          "SEARCH"
+        );
+        console.log(`🎯 API quota available: ${hasQuotaForSearch}`);
+
+        if (!hasQuotaForSearch) {
+          console.log(`⚠️ Insufficient API quota for channel ${channel.id}`);
+
+          // Utiliser le cache même s'il est périmé plutôt que de ne rien retourner
+          const cachedVideos = await YoutubeVideoCache.getCachedVideos(
+            channel.id
+          );
+          if (cachedVideos.length > 0) {
+            allVideos.push(...cachedVideos);
+            console.log(
+              `📦 Using expired cache: Found ${cachedVideos.length} videos`
+            );
+          }
+          continue;
+        }
+
+        console.log(`🌐 Fetching fresh data from YouTube API...`);
+        // 1. Récupérer les IDs des vidéos via l'API Search avec limitation
+        const response = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=${maxResultsPerChannel}&type=video`
+        );
+
+        // Tracker l'utilisation du quota après la requête
+        await ApiQuotaService.trackQuotaUsage("SEARCH");
+
+        if (!response.ok) {
+          throw new Error(`YouTube API error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Extraire les IDs des vidéos pour la seconde requête
+        const videoIds = data.items
+          .map((item: YouTubeApiItem) => item.id.videoId)
+          .join(",");
+
+        // Vérifier si nous avons assez de quota pour les détails des vidéos
+        const videoCount = data.items.length;
+        const hasQuotaForDetails = await ApiQuotaService.hasAvailableQuota(
+          "VIDEO_DETAILS",
+          videoCount
+        );
+
+        if (!hasQuotaForDetails) {
+          console.log(
+            `Quota API insuffisant pour les détails de ${videoCount} vidéos`
+          );
+          continue;
+        }
+
+        // 2. Récupérer les détails des vidéos, y compris la durée
+        const videoDetailsResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=contentDetails,snippet`
+        );
+
+        // Tracker l'utilisation du quota après la requête
+        await ApiQuotaService.trackQuotaUsage("VIDEO_DETAILS", videoCount);
+
+        if (!videoDetailsResponse.ok) {
+          throw new Error(
+            `YouTube API error: ${videoDetailsResponse.statusText}`
           );
         }
-        continue;
-      }
 
-      console.log(`🌐 Fetching fresh data from YouTube API...`);
-      // 1. Récupérer les IDs des vidéos via l'API Search avec limitation
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=${maxResultsPerChannel}&type=video`
-      );
+        const videoDetails = await videoDetailsResponse.json();
 
-      // Tracker l'utilisation du quota après la requête
-      await ApiQuotaService.trackQuotaUsage("SEARCH");
+        // Créer un Map des détails par ID de vidéo
+        const detailsMap = new Map<
+          string,
+          { formattedDuration: string; durationSeconds: number }
+        >();
 
-      if (!response.ok) {
-        throw new Error(`YouTube API error: ${response.statusText}`);
-      }
+        videoDetails.items.forEach((item: YouTubeVideoDetails) => {
+          const durationSeconds = parseDuration(item.contentDetails.duration);
 
-      const data = await response.json();
+          // Ne pas inclure les vidéos de moins de 3 minutes
+          if (durationSeconds < MIN_VIDEO_DURATION_SECONDS) {
+            return;
+          }
 
-      // Extraire les IDs des vidéos pour la seconde requête
-      const videoIds = data.items
-        .map((item: YouTubeApiItem) => item.id.videoId)
-        .join(",");
-
-      // Vérifier si nous avons assez de quota pour les détails des vidéos
-      const videoCount = data.items.length;
-      const hasQuotaForDetails = await ApiQuotaService.hasAvailableQuota(
-        "VIDEO_DETAILS",
-        videoCount
-      );
-
-      if (!hasQuotaForDetails) {
-        console.log(
-          `Quota API insuffisant pour les détails de ${videoCount} vidéos`
-        );
-        continue;
-      }
-
-      // 2. Récupérer les détails des vidéos, y compris la durée
-      const videoDetailsResponse = await fetch(
-        `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=contentDetails,snippet`
-      );
-
-      // Tracker l'utilisation du quota après la requête
-      await ApiQuotaService.trackQuotaUsage("VIDEO_DETAILS", videoCount);
-
-      if (!videoDetailsResponse.ok) {
-        throw new Error(
-          `YouTube API error: ${videoDetailsResponse.statusText}`
-        );
-      }
-
-      const videoDetails = await videoDetailsResponse.json();
-
-      // Créer un Map des détails par ID de vidéo
-      const detailsMap = new Map<
-        string,
-        { formattedDuration: string; durationSeconds: number }
-      >();
-
-      videoDetails.items.forEach((item: YouTubeVideoDetails) => {
-        const durationSeconds = parseDuration(item.contentDetails.duration);
-
-        // Ne pas inclure les vidéos de moins de 3 minutes
-        if (durationSeconds < MIN_VIDEO_DURATION_SECONDS) {
-          return;
-        }
-
-        detailsMap.set(item.id, {
-          durationSeconds: durationSeconds,
-          formattedDuration: formatDuration(durationSeconds),
-        });
-      });
-
-      // Mapper les résultats de l'API YouTube au format attendu par l'application
-      // et filtrer pour ne garder que les vidéos de plus de 3 minutes
-      const channelVideos = data.items
-        .filter((item: YouTubeApiItem) => detailsMap.has(item.id.videoId))
-        .map((item: YouTubeApiItem) => {
-          const details = detailsMap.get(item.id.videoId);
-
-          return {
-            id: item.id.videoId,
-            title: decodeHtmlEntities(item.snippet.title),
-            description: decodeHtmlEntities(item.snippet.description),
-            thumbnailUrl: item.snippet.thumbnails.high.url,
-            channelTitle: decodeHtmlEntities(item.snippet.channelTitle),
-            publishedAt: formatDate(item.snippet.publishedAt),
-            videoUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-            duration: details!.formattedDuration, // Le '!' est sûr car on filtre avant
-            durationSeconds: details!.durationSeconds,
-            theme: channel.theme,
-            state: "A voir !", // Par défaut, toutes les nouvelles vidéos sont à voir
-          };
+          detailsMap.set(item.id, {
+            durationSeconds: durationSeconds,
+            formattedDuration: formatDuration(durationSeconds),
+          });
         });
 
-      // Mettre en cache les vidéos récupérées
-      await YoutubeVideoCache.cacheVideos(channelVideos, channel.id);
+        // Mapper les résultats de l'API YouTube au format attendu par l'application
+        // et filtrer pour ne garder que les vidéos de plus de 3 minutes
+        const channelVideos = data.items
+          .filter((item: YouTubeApiItem) => detailsMap.has(item.id.videoId))
+          .map((item: YouTubeApiItem) => {
+            const details = detailsMap.get(item.id.videoId);
 
-      allVideos.push(...channelVideos);
-    } catch (error) {
-      console.error(`Error fetching videos for channel ${channel.id}:`, error);
+            return {
+              id: item.id.videoId,
+              title: decodeHtmlEntities(item.snippet.title),
+              description: decodeHtmlEntities(item.snippet.description),
+              thumbnailUrl: item.snippet.thumbnails.high.url,
+              channelTitle: decodeHtmlEntities(item.snippet.channelTitle),
+              publishedAt: formatDate(item.snippet.publishedAt),
+              videoUrl: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+              duration: details!.formattedDuration, // Le '!' est sûr car on filtre avant
+              durationSeconds: details!.durationSeconds,
+              theme: channel.theme,
+              state: "A voir !", // Par défaut, toutes les nouvelles vidéos sont à voir
+            };
+          });
 
-      // En cas d'erreur, essayer de récupérer depuis le cache
-      const cachedVideos = await YoutubeVideoCache.getCachedVideos(channel.id);
-      if (cachedVideos.length > 0) {
-        allVideos.push(...cachedVideos);
-        console.log(
-          `Utilisation du cache pour la chaîne ${channel.id} suite à une erreur`
-        );
+        // Mettre en cache les vidéos récupérées
+        await YoutubeVideoCache.cacheVideos(channelVideos, channel.id);
+
+        allVideos.push(...channelVideos);
+      } catch (channelError) {
+        console.error(`Error processing channel ${channel.id}:`, channelError);
+        // Continue with next channel instead of breaking the entire function
+        continue;
       }
     }
-  }
 
-  return allVideos;
+    return allVideos;
+  } catch (error) {
+    console.error("Error in getYoutubeVideos:", error);
+    // Return empty array instead of propagating the error
+    return [];
+  }
 }
 
 // Helper function to format ISO date string to "15 Janvier 2025"

@@ -10,6 +10,52 @@ interface ItemsByStateProps {
   state: string;
 }
 
+// Color schemes by state
+const getStateStyles = (state: string) => {
+  switch (state) {
+    case "Impressionnant":
+      return {
+        cardBg: "bg-purple-900/30",
+        cardBorder: "border-purple-400/50",
+        hoverBorder: "hover:border-purple-400",
+        icon: "⭐",
+        iconColor: "text-purple-400"
+      };
+    case "Recommander":
+      return {
+        cardBg: "bg-green-900/30",
+        cardBorder: "border-green-400/50",
+        hoverBorder: "hover:border-green-400",
+        icon: "👍",
+        iconColor: "text-green-400"
+      };
+    case "A voir !":
+      return {
+        cardBg: "bg-blue-900/30",
+        cardBorder: "border-blue-400/50",
+        hoverBorder: "hover:border-blue-400",
+        icon: "👁️",
+        iconColor: "text-blue-400"
+      };
+    case "Ne pas recommander":
+      return {
+        cardBg: "bg-red-900/30",
+        cardBorder: "border-red-400/50",
+        hoverBorder: "hover:border-red-400",
+        icon: "👎",
+        iconColor: "text-red-400"
+      };
+    default:
+      return {
+        cardBg: "bg-gray-800",
+        cardBorder: "border-gray-700",
+        hoverBorder: "hover:border-gray-600",
+        icon: "📹",
+        iconColor: "text-gray-400"
+      };
+  }
+};
+
 const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => {
   const [updatingState, setUpdatingState] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState<string | null>(null);
@@ -117,149 +163,177 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
     }
   }, [modalVisible]);
 
+  // Get the styles for the current section
+  const sectionStyles = getStateStyles(state);
+
   return (
-    <div>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+    <div className={`p-6 rounded-lg ${sectionStyles.cardBg} border ${sectionStyles.cardBorder}`}>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto m-0 p-0">
         {filteredVideos.length > 0 ? (
-          filteredVideos.map((video) => (
-            <li
-              key={video.id}
-              className="my-4 bg-gray-800 rounded-xl overflow-hidden w-full shadow-lg hover:shadow-xl transition-shadow cursor-pointer relative"
-              onClick={() => window.open(video.videoUrl, '_blank', 'noopener,noreferrer')}
-              ref={modalVisible === video.id ? cardRef : null}
-            >
-              <div className="w-full relative aspect-video">
-                <Image
-                  src={video.thumbnailUrl}
-                  alt={video.title}
-                  fill
-                  style={{ objectFit: "cover" }}
-                />
-                <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
-                  {video.duration}
-                </div>
-              </div>
-              <div className="p-4">
-                <h2 className="text-xl font-semibold line-clamp-2 mb-2">{decodeHtml(video.title)}</h2>
-                <p className="text-gray-300 mb-2">{decodeHtml(video.channelTitle)}</p>
+          filteredVideos.map((video, index, array) => {
+            const videoStyles = getStateStyles(video.state || state);
 
-                <div className="flex justify-between items-center mt-1 mb-2">
-                  <div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="bg-gray-700 rounded-md px-2 py-1 text-sm">{video.theme}</span>
-                    </div>
-                    <p className="text-gray-400 text-sm mt-2">{video.publishedAt}</p>
+            // Calculate if this is the first row or last row based on index
+            // For example, in a 4-column layout, indices 0-3 are in the first row
+            const columns = {
+              default: 1,
+              sm: 2,
+              md: 3,
+              lg: 4
+            };
+
+            // Use the largest column count for simplicity (this will work for large screens)
+            const maxCols = columns.lg;
+            const isFirstRow = index < maxCols;
+            const itemsInLastRow = array.length % maxCols === 0 ? maxCols : array.length % maxCols;
+            const isLastRow = index >= array.length - itemsInLastRow;
+
+            // Apply margins conditionally
+            const marginClasses = `
+              ${isFirstRow ? 'mt-0' : ''} 
+              ${isLastRow ? 'mb-0' : ''} 
+            `.trim();
+
+            return (
+              <li
+                key={video.id}
+                className={`${marginClasses} ${videoStyles.cardBg} rounded-xl overflow-hidden w-full shadow-lg hover:shadow-xl transition-all cursor-pointer relative border ${videoStyles.cardBorder} ${videoStyles.hoverBorder}`}
+                onClick={() => window.open(video.videoUrl, '_blank', 'noopener,noreferrer')}
+                ref={modalVisible === video.id ? cardRef : null}
+              >
+                <div className="w-full relative aspect-video">
+                  <Image
+                    src={video.thumbnailUrl}
+                    alt={video.title}
+                    fill
+                    style={{ objectFit: "cover" }}
+                  />
+                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
+                    {video.duration}
                   </div>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Pass the parent li element to get its size
-                      openModal(e, video.id, e.currentTarget.closest('li') as HTMLElement);
-                    }}
-                    className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition text-white self-end"
-                    aria-label="Modifier l'état"
-                  >
-                    <FiEdit size={18} />
-                  </button>
                 </div>
-              </div>
+                <div className="p-4">
+                  <h2 className="text-xl font-semibold line-clamp-2 mb-2">{decodeHtml(video.title)}</h2>
+                  <p className="text-gray-300 mb-2">{decodeHtml(video.channelTitle)}</p>
 
-              {/* Modal pour modifier l'état de la vidéo */}
-              {modalVisible === video.id && (
-                <>
-                  <div
-                    className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-40 transition-opacity"
-                    onClick={closeModal}
-                  ></div>
-                  <div
-                    ref={modalRef}
-                    className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col justify-center"
-                    style={{
-                      width: `${cardWidth}px`,
-                      height: `${cardHeight}px`,
-                      maxWidth: '90vw',
-                      maxHeight: '90vh'
-                    }}
-                  >
-                    <div className="p-4 flex flex-col justify-center items-center h-full">
-                      <h3 className="text-lg font-medium text-white mb-4">Sélectionnez le nouvel état</h3>
-
-                      <div className="grid grid-cols-2 gap-3 w-full">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUpdateState(video.id, "Impressionnant", video.duration, video.durationSeconds);
-                          }}
-                          disabled={updatingState === video.id}
-                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Impressionnant"
-                            ? 'bg-purple-600'
-                            : 'bg-gray-800 border border-purple-400/50 hover:bg-purple-600/30 hover:border-purple-400'
-                            }`}
-                        >
-                          <span className="text-xl mb-1 text-purple-400">⭐</span>
-                          <span className="font-medium">Impressionnant</span>
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUpdateState(video.id, "Recommander", video.duration, video.durationSeconds);
-                          }}
-                          disabled={updatingState === video.id}
-                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Recommander"
-                            ? 'bg-green-600'
-                            : 'bg-gray-800 border border-green-400/50 hover:bg-green-600/30 hover:border-green-400'
-                            }`}
-                        >
-                          <span className="text-xl mb-1 text-green-400">👍</span>
-                          <span className="font-medium">Recommander</span>
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds);
-                          }}
-                          disabled={updatingState === video.id}
-                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "A voir !"
-                            ? 'bg-blue-600'
-                            : 'bg-gray-800 border border-blue-400/50 hover:bg-blue-600/30 hover:border-blue-400'
-                            }`}
-                        >
-                          <span className="text-xl mb-1 text-blue-400">👁️</span>
-                          <span className="font-medium">À voir</span>
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleUpdateState(video.id, "Ne pas recommander", video.duration, video.durationSeconds);
-                          }}
-                          disabled={updatingState === video.id}
-                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Ne pas recommander"
-                            ? 'bg-red-600'
-                            : 'bg-gray-800 border border-red-400/50 hover:bg-red-600/30 hover:border-red-400'
-                            }`}
-                        >
-                          <span className="text-xl mb-1 text-red-400">👎</span>
-                          <span className="font-medium">Ne pas recommander</span>
-                        </button>
+                  <div className="flex justify-between items-center mt-1 mb-2">
+                    <div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="bg-gray-700 rounded-md px-2 py-1 text-sm">{video.theme}</span>
                       </div>
-
-                      {/* Loader */}
-                      {updatingState === video.id && (
-                        <div className="flex justify-center my-2">
-                          <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                          <span className="ml-2 text-sm text-gray-300">Mise à jour...</span>
-                        </div>
-                      )}
+                      <p className="text-gray-400 text-sm mt-2">{video.publishedAt}</p>
                     </div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Pass the parent li element to get its size
+                        openModal(e, video.id, e.currentTarget.closest('li') as HTMLElement);
+                      }}
+                      className={`p-2 rounded-md hover:bg-opacity-80 transition text-white self-end ${videoStyles.cardBg} border ${videoStyles.cardBorder}`}
+                      aria-label="Modifier l'état"
+                    >
+                      <FiEdit size={18} />
+                    </button>
                   </div>
-                </>
-              )}
-            </li>
-          ))
+                </div>
+
+                {/* Modal pour modifier l'état de la vidéo */}
+                {modalVisible === video.id && (
+                  <>
+                    <div
+                      className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-40 transition-opacity"
+                      onClick={closeModal}
+                    ></div>
+                    <div
+                      ref={modalRef}
+                      className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col justify-center"
+                      style={{
+                        width: `${cardWidth}px`,
+                        height: `${cardHeight}px`,
+                        maxWidth: '90vw',
+                        maxHeight: '90vh'
+                      }}
+                    >
+                      <div className="p-4 flex flex-col justify-center items-center h-full">
+                        <h3 className="text-lg font-medium text-white mb-4">Sélectionnez le nouvel état</h3>
+
+                        <div className="grid grid-cols-2 gap-3 w-full">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateState(video.id, "Impressionnant", video.duration, video.durationSeconds);
+                            }}
+                            disabled={updatingState === video.id}
+                            className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Impressionnant"
+                              ? 'bg-purple-600'
+                              : 'bg-gray-800 border border-purple-400/50 hover:bg-purple-600/30 hover:border-purple-400'
+                              }`}
+                          >
+                            <span className="text-xl mb-1 text-purple-400">⭐</span>
+                            <span className="font-medium">Impressionnant</span>
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateState(video.id, "Recommander", video.duration, video.durationSeconds);
+                            }}
+                            disabled={updatingState === video.id}
+                            className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Recommander"
+                              ? 'bg-green-600'
+                              : 'bg-gray-800 border border-green-400/50 hover:bg-green-600/30 hover:border-green-400'
+                              }`}
+                          >
+                            <span className="text-xl mb-1 text-green-400">👍</span>
+                            <span className="font-medium">Recommander</span>
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds);
+                            }}
+                            disabled={updatingState === video.id}
+                            className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "A voir !"
+                              ? 'bg-blue-600'
+                              : 'bg-gray-800 border border-blue-400/50 hover:bg-blue-600/30 hover:border-blue-400'
+                              }`}
+                          >
+                            <span className="text-xl mb-1 text-blue-400">👁️</span>
+                            <span className="font-medium">À voir</span>
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateState(video.id, "Ne pas recommander", video.duration, video.durationSeconds);
+                            }}
+                            disabled={updatingState === video.id}
+                            className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Ne pas recommander"
+                              ? 'bg-red-600'
+                              : 'bg-gray-800 border border-red-400/50 hover:bg-red-600/30 hover:border-red-400'
+                              }`}
+                          >
+                            <span className="text-xl mb-1 text-red-400">👎</span>
+                            <span className="font-medium">Ne pas recommander</span>
+                          </button>
+                        </div>
+
+                        {/* Loader */}
+                        {updatingState === video.id && (
+                          <div className="flex justify-center my-2">
+                            <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                            <span className="ml-2 text-sm text-gray-300">Mise à jour...</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </li>
+            );
+          })
         ) : (
           <p>Aucune vidéo trouvée dans cette catégorie</p>
         )}

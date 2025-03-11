@@ -8,10 +8,21 @@ interface VeilleProps {
   youtubeVideos: YoutubeVideo[];
 }
 
-const Veille: React.FC<VeilleProps> = ({ youtubeVideos }) => {
-  // State to track active filters
+const Veille: React.FC<VeilleProps> = ({ youtubeVideos = [] }) => {
+  // State to track active filters - always define hooks at the top level before any conditional returns
   const [activeStateFilters, setActiveStateFilters] = useState<string[]>([]);
   const [activeThemeFilters, setActiveThemeFilters] = useState<string[]>([]);
+
+  // Handle case when youtubeVideos is undefined or empty
+  if (!youtubeVideos || youtubeVideos.length === 0) {
+    return (
+      <section className="py-12 text-center">
+        <p className="text-xl text-gray-400">
+          Aucune vidéo disponible pour le moment. Veuillez réessayer plus tard.
+        </p>
+      </section>
+    );
+  }
 
   // Vérifier si une catégorie contient des vidéos
   const hasVideosWithState = (state: string): boolean => {
