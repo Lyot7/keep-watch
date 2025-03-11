@@ -56,12 +56,12 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   // Créer les statistiques pour l'affichage
   const categoryStats: CategoryStat[] = [
     {
-      name: "À voir",
-      count: countByState["A voir !"],
-      icon: <FiClock size={24} className="text-blue-400" />,
-      color: "bg-blue-600",
-      percentage: totalVideos > 0 ? (countByState["A voir !"] / totalVideos) * 100 : 0,
-      stateKey: "A voir !"
+      name: "Impressionnantes",
+      count: countByState["Impressionnant"],
+      icon: <FiStar size={24} className="text-purple-400" />,
+      color: "bg-purple-600",
+      percentage: totalVideos > 0 ? (countByState["Impressionnant"] / totalVideos) * 100 : 0,
+      stateKey: "Impressionnant"
     },
     {
       name: "Recommandées",
@@ -72,12 +72,12 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       stateKey: "Recommander"
     },
     {
-      name: "Impressionnantes",
-      count: countByState["Impressionnant"],
-      icon: <FiStar size={24} className="text-purple-400" />,
-      color: "bg-purple-600",
-      percentage: totalVideos > 0 ? (countByState["Impressionnant"] / totalVideos) * 100 : 0,
-      stateKey: "Impressionnant"
+      name: "À voir",
+      count: countByState["A voir !"],
+      icon: <FiClock size={24} className="text-blue-400" />,
+      color: "bg-blue-600",
+      percentage: totalVideos > 0 ? (countByState["A voir !"] / totalVideos) * 100 : 0,
+      stateKey: "A voir !"
     },
     {
       name: "Pas recommandées",

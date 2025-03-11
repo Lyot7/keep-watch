@@ -2,7 +2,7 @@
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { decodeHtml } from "@/utils/decodeHtml";
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { FiEdit } from "react-icons/fi";
 
 interface ItemsByStateProps {
@@ -13,6 +13,9 @@ interface ItemsByStateProps {
 const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => {
   const [updatingState, setUpdatingState] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState<string | null>(null);
+  const [cardWidth, setCardWidth] = useState(0);
+  const [cardHeight, setCardHeight] = useState(0);
+  const cardRef = useRef<HTMLLIElement>(null);
 
   // Fonction pour convertir une date formatée (ex: "15 Janvier 2025") en objet Date
   const parseFormattedDate = (dateString: string): Date => {
@@ -67,9 +70,14 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
   };
 
   // Fonction pour ouvrir la modale
-  const openModal = (e: React.MouseEvent, videoId: string) => {
+  const openModal = (e: React.MouseEvent, videoId: string, cardElement: HTMLElement) => {
     e.stopPropagation();
     setModalVisible(videoId);
+    // Get the width and height of the card and set it for the modal
+    if (cardElement) {
+      setCardWidth(cardElement.offsetWidth);
+      setCardHeight(cardElement.offsetHeight);
+    }
   };
 
   // Fonction pour fermer la modale
@@ -96,6 +104,7 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
               key={video.id}
               className="my-4 bg-gray-800 rounded-xl overflow-hidden w-full shadow-lg hover:shadow-xl transition-shadow cursor-pointer relative"
               onClick={() => window.open(video.videoUrl, '_blank', 'noopener,noreferrer')}
+              ref={modalVisible === video.id ? cardRef : null}
             >
               <div className="w-full relative aspect-video">
                 <Image
@@ -123,7 +132,8 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      openModal(e, video.id);
+                      // Pass the parent li element to get its size
+                      openModal(e, video.id, e.currentTarget.closest('li') as HTMLElement);
                     }}
                     className="p-2 rounded-md bg-gray-700 hover:bg-gray-600 transition text-white self-end"
                     aria-label="Modifier l'état"
@@ -137,61 +147,80 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
               {modalVisible === video.id && (
                 <>
                   <div
-                    className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                    className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm z-40 transition-opacity"
                     onClick={closeModal}
                   ></div>
                   <div
-                    className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 p-6 rounded-lg shadow-xl z-50 w-80"
+                    className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col justify-center"
+                    style={{
+                      width: `${cardWidth}px`,
+                      height: `${cardHeight}px`,
+                      maxWidth: '90vw',
+                      maxHeight: '90vh'
+                    }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <h3 className="text-xl font-semibold mb-4">Modifier l&apos;état</h3>
-                    <p className="text-gray-300 mb-4 line-clamp-1">{decodeHtml(video.title)}</p>
+                    <div className="p-4 flex flex-col justify-center items-center h-full">
+                      <h3 className="text-lg font-medium text-white mb-4">Sélectionnez le nouvel état</h3>
 
-                    <div className="flex flex-col gap-3">
-                      <button
-                        onClick={() => handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds)}
-                        disabled={updatingState === video.id}
-                        className={`p-2 rounded ${video.state === "A voir !" ? 'bg-gray-600' : 'bg-blue-600 hover:bg-blue-700'} transition`}
-                      >
-                        À voir
-                      </button>
-                      <button
-                        onClick={() => handleUpdateState(video.id, "Recommander", video.duration, video.durationSeconds)}
-                        disabled={updatingState === video.id}
-                        className={`p-2 rounded ${video.state === "Recommander" ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'} transition`}
-                      >
-                        Recommander
-                      </button>
-                      <button
-                        onClick={() => handleUpdateState(video.id, "Impressionnant", video.duration, video.durationSeconds)}
-                        disabled={updatingState === video.id}
-                        className={`p-2 rounded ${video.state === "Impressionnant" ? 'bg-gray-600' : 'bg-purple-600 hover:bg-purple-700'} transition`}
-                      >
-                        Impressionnant
-                      </button>
-                      <button
-                        onClick={() => handleUpdateState(
-                          video.id,
-                          "Ne pas recommander",
-                          video.duration,
-                          video.durationSeconds
-                        )}
-                        disabled={updatingState === video.id}
-                        className={`p-2 rounded ${video.state === "Ne pas recommander"
-                          ? 'bg-gray-600'
-                          : 'bg-red-600 hover:bg-red-700'
-                          } transition`}
-                      >
-                        Ne pas recommander
-                      </button>
+                      <div className="grid grid-cols-2 gap-3 w-full">
+                        <button
+                          onClick={() => handleUpdateState(video.id, "Impressionnant", video.duration, video.durationSeconds)}
+                          disabled={updatingState === video.id}
+                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Impressionnant"
+                            ? 'bg-purple-600'
+                            : 'bg-gray-800 border border-purple-400/50 hover:bg-purple-600/30 hover:border-purple-400'
+                            }`}
+                        >
+                          <span className="text-xl mb-1 text-purple-400">⭐</span>
+                          <span className="font-medium">Impressionnant</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleUpdateState(video.id, "Recommander", video.duration, video.durationSeconds)}
+                          disabled={updatingState === video.id}
+                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Recommander"
+                            ? 'bg-green-600'
+                            : 'bg-gray-800 border border-green-400/50 hover:bg-green-600/30 hover:border-green-400'
+                            }`}
+                        >
+                          <span className="text-xl mb-1 text-green-400">👍</span>
+                          <span className="font-medium">Recommander</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleUpdateState(video.id, "A voir !", video.duration, video.durationSeconds)}
+                          disabled={updatingState === video.id}
+                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "A voir !"
+                            ? 'bg-blue-600'
+                            : 'bg-gray-800 border border-blue-400/50 hover:bg-blue-600/30 hover:border-blue-400'
+                            }`}
+                        >
+                          <span className="text-xl mb-1 text-blue-400">👁️</span>
+                          <span className="font-medium">À voir</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleUpdateState(video.id, "Ne pas recommander", video.duration, video.durationSeconds)}
+                          disabled={updatingState === video.id}
+                          className={`p-3 rounded-md flex flex-col items-center justify-center transition-all ${video.state === "Ne pas recommander"
+                            ? 'bg-red-600'
+                            : 'bg-gray-800 border border-red-400/50 hover:bg-red-600/30 hover:border-red-400'
+                            }`}
+                        >
+                          <span className="text-xl mb-1 text-red-400">👎</span>
+                          <span className="font-medium">Ne pas recommander</span>
+                        </button>
+                      </div>
+
+                      {/* Loader */}
+                      {updatingState === video.id && (
+                        <div className="flex justify-center my-2">
+                          <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                          <span className="ml-2 text-sm text-gray-300">Mise à jour...</span>
+                        </div>
+                      )}
                     </div>
-
-                    <button
-                      onClick={closeModal}
-                      className="mt-4 p-2 w-full rounded bg-gray-600 hover:bg-gray-700 transition"
-                    >
-                      Annuler
-                    </button>
                   </div>
                 </>
               )}
