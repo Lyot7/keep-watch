@@ -40,7 +40,7 @@ export function VideoCard({ video }: VideoCardProps) {
   };
 
   return (
-    <div className="bg-gray-700 rounded-lg p-4">
+    <div className="bg-gray-700 rounded-lg p-4 h-full">
       <div className="aspect-video relative mb-2">
         <iframe
           src={`https://www.youtube.com/embed/${video.videoId}`}
