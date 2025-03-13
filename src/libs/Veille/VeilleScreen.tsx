@@ -1,8 +1,8 @@
 "use client";
-import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
+import { YoutubeVideo } from "@/frontend/pages/api/youtube/getYoutubeVideos";
+import DashboardStats from "@/libs/Veille/DashboardStats";
+import ItemsByState from "@/libs/Veille/ItemsByState";
 import { useState } from "react";
-import DashboardStats from "./DashboardStats";
-import ItemsByState from "./ItemsByState";
 
 interface VeilleProps {
   youtubeVideos: YoutubeVideo[];

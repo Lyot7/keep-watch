@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model YoutubeChannel {
+  id              String              @id @default(uuid())
+  channelId       String              @unique
+  title           String
+  description     String?
+  thumbnailUrl    String?
+  subscriberCount Int?
+  lastUpdated     DateTime            @default(now())
+  isActive        Boolean             @default(true)
+  videos          YoutubeVideoCache[]
+
+  @@index([channelId])
+}
+
+model YoutubeVideoCache {
+  id              String         @id @default(uuid())
+  videoId         String         @unique
+  title           String
+  description     String
+  thumbnailUrl    String
+  channelTitle    String
+  channelId       String
+  publishedAt     String
+  videoUrl        String
+  duration        String
+  durationSeconds Int
+  theme           String?
+  state           String         @default("A voir !")
+  viewCount       Int?
+  likeCount       Int?
+  lastFetched     DateTime       @default(now())
+  videoState      VideoState?
+  videoThemes     VideoTheme[]
+  channel         YoutubeChannel @relation(fields: [channelId], references: [channelId])
+
+  @@index([channelId])
+  @@index([state])
+  @@index([publishedAt])
+}
+
+model VideoState {
+  id              String            @id @default(uuid())
+  videoId         String            @unique
+  state           String
+  duration        String?
+  durationSeconds Int?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  notes           String?
+  rating          Int?
+  video           YoutubeVideoCache @relation(fields: [videoId], references: [videoId])
+}
+
+model Theme {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  color       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  videoThemes VideoTheme[]
+}
+
+model VideoTheme {
+  id        String            @id @default(uuid())
+  videoId   String
+  themeId   String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  theme     Theme             @relation(fields: [themeId], references: [id])
+  video     YoutubeVideoCache @relation(fields: [videoId], references: [videoId])
+
+  @@unique([videoId, themeId])
+}
+
+model ApiQuotaUsage {
+  id          String   @id @default(uuid())
+  date        DateTime @unique @default(now()) @db.Date
+  quotaUsed   Int      @default(0)
+  description String?
+}

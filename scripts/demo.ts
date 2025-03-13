@@ -11,9 +11,9 @@
  * Exécuter avec: npx ts-node scripts/demo.ts
  */
 
+import { YoutubeService } from "@/libs/youtubeService";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
-import { YoutubeService } from "../src/libs/youtubeService";
 
 // Charger les variables d'environnement
 dotenv.config();

@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Grille en perspective */
+.perspective-grid {
+  perspective: 800px;
+  overflow: hidden;
+  background-color: #000000;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.grid-lines {
+  position: absolute;
+  width: 400%;
+  height: 400%;
+  top: -150%;
+  left: -150%;
+  transform-style: preserve-3d;
+  transform: rotateX(60deg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.grid-lines::before,
+.grid-lines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.07) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: center center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.grid-lines::after {
+  background-size: 200px 200px;
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.12) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+  background-position: center center;
+}
+
+/* Améliorer l'apparence de la grille sur les appareils à basse performance */
+@media (prefers-reduced-motion: reduce) {
+  .perspective-grid {
+    display: none;
+  }
+}
+
+/* Ajustements pour les composants sur le fond */
+.bg-gray-800 {
+  background-color: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(5px);
+}
+
+.bg-gray-700 {
+  background-color: rgba(31, 41, 55, 0.8);
+  backdrop-filter: blur(2px);
+}
+
+/* Ajouter un peu de brillance aux bordures */
+.rounded-xl,
+.rounded-lg {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+}
