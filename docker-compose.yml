@@ -1,23 +1,109 @@
 version: "3.8"
 
 services:
+  # Main application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keepwatch-app
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-Lyot}:${POSTGRES_PASSWORD:-S0S@L0N10n}@postgres:5432/${POSTGRES_DB:-keepwatch}
+      - NODE_ENV=development
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+      - YOUTUBE_CACHE_TTL_HOURS=${YOUTUBE_CACHE_TTL_HOURS:-24}
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    command: npm run dev
+
+  # Database service
   postgres:
     image: postgres:15
     container_name: keepwatch-postgres
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: Lyot
-      POSTGRES_PASSWORD: S0S@L0N10n
-      POSTGRES_DB: keepwatch
+      POSTGRES_USER: ${POSTGRES_USER:-Lyot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-S0S@L0N10n}
+      POSTGRES_DB: ${POSTGRES_DB:-keepwatch}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U Lyot"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-Lyot}"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
+  # Setup service - runs migrations and exits
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keepwatch-setup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-Lyot}:${POSTGRES_PASSWORD:-S0S@L0N10n}@postgres:5432/${POSTGRES_DB:-keepwatch}
+      - NODE_ENV=development
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    command: >
+      sh -c "
+        echo '🔄 Running Prisma migrations...' &&
+        npx prisma migrate deploy &&
+        echo '✅ Migrations completed successfully!'
+      "
+    profiles:
+      - setup
+
+  # Demo service - runs the demo script and exits
+  demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keepwatch-demo
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-Lyot}:${POSTGRES_PASSWORD:-S0S@L0N10n}@postgres:5432/${POSTGRES_DB:-keepwatch}
+      - NODE_ENV=development
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    command: npx ts-node docker/scripts/demo.ts
+    profiles:
+      - demo
+
+  # Reset cache service - resets the YouTube cache and exits
+  reset-cache:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: keepwatch-reset-cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-Lyot}:${POSTGRES_PASSWORD:-S0S@L0N10n}@postgres:5432/${POSTGRES_DB:-keepwatch}
+      - NODE_ENV=development
+    volumes:
+      - ./:/app
+      - node_modules:/app/node_modules
+    command: npx ts-node docker/scripts/reset-youtube-cache.ts
+    profiles:
+      - reset
+
 volumes:
   postgres_data:
+  node_modules:
