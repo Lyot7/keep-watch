@@ -150,16 +150,19 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
           continue;
         }
 
-        // Vérifier si nous avons assez de quota pour les opérations API
-        const hasQuotaForSearch = await ApiQuotaService.hasAvailableQuota(
-          "SEARCH"
+        console.log(`🌐 Fetching fresh data from YouTube API...`);
+
+        // 1. Récupérer les IDs des vidéos via l'API Search
+        const response = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=${maxResultsPerChannel}&type=video`
         );
-        console.log(`🎯 API quota available: ${hasQuotaForSearch}`);
 
-        if (!hasQuotaForSearch) {
-          console.log(`⚠️ Insufficient API quota for channel ${channel.id}`);
+        // Tracker l'utilisation du quota après la requête (for informational purposes only)
+        await ApiQuotaService.trackQuotaUsage("SEARCH");
 
-          // Utiliser le cache même s'il est périmé plutôt que de ne rien retourner
+        if (!response.ok) {
+          console.log(`YouTube API error: ${response.statusText}`);
+          // On error, try to use cached data even if expired
           const cachedVideos = await YoutubeVideoCache.getCachedVideos(
             channel.id
           );
@@ -172,19 +175,6 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
           continue;
         }
 
-        console.log(`🌐 Fetching fresh data from YouTube API...`);
-        // 1. Récupérer les IDs des vidéos via l'API Search avec limitation
-        const response = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=${maxResultsPerChannel}&type=video`
-        );
-
-        // Tracker l'utilisation du quota après la requête
-        await ApiQuotaService.trackQuotaUsage("SEARCH");
-
-        if (!response.ok) {
-          throw new Error(`YouTube API error: ${response.statusText}`);
-        }
-
         const data = await response.json();
 
         // Extraire les IDs des vidéos pour la seconde requête
@@ -192,32 +182,19 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
           .map((item: YouTubeApiItem) => item.id.videoId)
           .join(",");
 
-        // Vérifier si nous avons assez de quota pour les détails des vidéos
         const videoCount = data.items.length;
-        const hasQuotaForDetails = await ApiQuotaService.hasAvailableQuota(
-          "VIDEO_DETAILS",
-          videoCount
-        );
-
-        if (!hasQuotaForDetails) {
-          console.log(
-            `Quota API insuffisant pour les détails de ${videoCount} vidéos`
-          );
-          continue;
-        }
 
         // 2. Récupérer les détails des vidéos, y compris la durée
         const videoDetailsResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=contentDetails,snippet`
         );
 
-        // Tracker l'utilisation du quota après la requête
+        // Tracker l'utilisation du quota après la requête (for informational purposes only)
         await ApiQuotaService.trackQuotaUsage("VIDEO_DETAILS", videoCount);
 
         if (!videoDetailsResponse.ok) {
-          throw new Error(
-            `YouTube API error: ${videoDetailsResponse.statusText}`
-          );
+          console.log(`YouTube API error: ${videoDetailsResponse.statusText}`);
+          continue;
         }
 
         const videoDetails = await videoDetailsResponse.json();

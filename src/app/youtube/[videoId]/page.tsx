@@ -253,8 +253,24 @@ export default function VideoDetailPage() {
   console.log('State styles applied:', videoStyles);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black text-white relative">
+      {/* Grille en perspective en arrière-plan */}
+      <div className="perspective-grid">
+        <div className="grid-lines"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10 p-4 md:p-6">
+        <div className="mb-4">
+          <button
+            onClick={() => router.push('/')}
+            className="px-5 py-2 bg-gray-800 bg-opacity-80 hover:bg-gray-700 text-white rounded-full transition-colors flex items-center gap-2 border border-gray-700"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Main Page
+          </button>
+        </div>
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Main content - Video and details */}
           <div className="lg:w-2/3">
@@ -296,7 +312,7 @@ export default function VideoDetailPage() {
                   </button>
 
                   {isEditing && (
-                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg z-10 dropdown-menu">
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 bg-opacity-80 backdrop-blur-sm rounded-lg shadow-lg z-10 dropdown-menu">
                       {STATES.map((state) => {
                         const stateStyle = getStateStyles(state);
                         const isCurrentState = state === video.state;
@@ -325,7 +341,7 @@ export default function VideoDetailPage() {
 
               {/* Video description */}
               {video.description && (
-                <div className="bg-gray-800 p-4 rounded-lg">
+                <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm p-4 rounded-lg">
                   <p className="text-gray-300 whitespace-pre-wrap">
                     {decodeHtml(video.description)}
                   </p>
@@ -336,61 +352,60 @@ export default function VideoDetailPage() {
 
           {/* Sidebar - Recommendations */}
           <div className="lg:w-1/3">
-            <h2 className="text-lg font-semibold mb-3">
-              {recommendations.some(rec => rec.state === "A voir !")
-                ? "Vidéos à voir"
-                : "Vidéos recommandées"}
-            </h2>
+            <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm p-4 rounded-lg">
+              <h2 className="text-lg font-bold mb-4">Recommended Videos</h2>
 
-            {recommendations.length > 0 ? (
-              <div className="space-y-4">
-                {recommendations.map((rec) => {
-                  const recStyles = getStateStyles(rec.state || "");
-                  console.log('Rendering recommendation:', rec);
-                  return (
-                    <div
-                      key={rec.videoId || rec.id}
-                      className={`flex gap-3 ${recStyles.bg} rounded-lg p-2 cursor-pointer border ${recStyles.border} ${recStyles.hoverBorder}`}
-                      onClick={() => router.push(`/youtube/${rec.videoId || rec.id}`)}
-                    >
-                      <div className="w-40 min-w-[100px] aspect-video relative">
-                        {rec.thumbnailUrl ? (
-                          <Image
-                            src={rec.thumbnailUrl}
-                            alt={rec.title || 'Video thumbnail'}
-                            fill
-                            sizes="(max-width: 768px) 100px, 150px"
-                            className="object-cover rounded"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
-                            <span className="text-xs text-gray-400">No thumbnail</span>
-                          </div>
-                        )}
-                        {rec.duration && (
-                          <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white px-1 py-0.5 text-xs rounded">
-                            {rec.duration}
-                          </div>
-                        )}
+              {recommendations.length > 0 ? (
+                <div className="space-y-4">
+                  {recommendations.map((rec) => {
+                    console.log('Rendering recommendation:', rec);
+                    return (
+                      <div
+                        key={rec.videoId || rec.id}
+                        className="flex gap-3 p-2 rounded-lg hover:bg-gray-700 hover:bg-opacity-80 transition-colors cursor-pointer bg-opacity-60"
+                        onClick={() => {
+                          router.push(`/youtube/${rec.videoId || rec.id}`);
+                        }}
+                      >
+                        <div className="w-40 min-w-[100px] aspect-video relative">
+                          {rec.thumbnailUrl ? (
+                            <Image
+                              src={rec.thumbnailUrl}
+                              alt={rec.title || 'Video thumbnail'}
+                              fill
+                              sizes="(max-width: 768px) 100px, 150px"
+                              className="object-cover rounded"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 bg-gray-800 flex items-center justify-center">
+                              <span className="text-xs text-gray-400">No thumbnail</span>
+                            </div>
+                          )}
+                          {rec.duration && (
+                            <div className="absolute bottom-1 right-1 bg-black bg-opacity-70 text-white px-1 py-0.5 text-xs rounded">
+                              {rec.duration}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col overflow-hidden">
+                          <h3 className="font-medium text-sm line-clamp-2">
+                            {rec.title ? decodeHtml(rec.title) : `Video ${rec.id || rec.videoId || 'Unknown'}`}
+                          </h3>
+                          <p className="text-gray-400 text-xs mt-1">
+                            {rec.channelTitle ? decodeHtml(rec.channelTitle) : 'Unknown Channel'}
+                          </p>
+                          <p className="text-gray-500 text-xs mt-1">
+                            ID: {rec.videoId || rec.id || 'Missing'}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex flex-col overflow-hidden">
-                        <h3 className="font-medium text-sm line-clamp-2">
-                          {rec.title ? decodeHtml(rec.title) : `Video ${rec.id || rec.videoId || 'Unknown'}`}
-                        </h3>
-                        <p className="text-gray-400 text-xs mt-1">
-                          {rec.channelTitle ? decodeHtml(rec.channelTitle) : 'Unknown Channel'}
-                        </p>
-                        <p className="text-gray-500 text-xs mt-1">
-                          ID: {rec.videoId || rec.id || 'Missing'}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-gray-400 text-sm">No recommendations available</p>
-            )}
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm">No recommendations available</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
