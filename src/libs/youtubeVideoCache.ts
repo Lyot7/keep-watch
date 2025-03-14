@@ -12,7 +12,8 @@ export class YoutubeVideoCache {
    * Vérifie si les vidéos d'une chaîne ont besoin d'être rafraîchies
    */
   static async needsRefresh(channelId: string): Promise<boolean> {
-    const cacheTtlHours = parseInt(process.env.YOUTUBE_CACHE_TTL_HOURS || "24");
+    // Set a lower cache TTL now that we don't worry about quota
+    const cacheTtlHours = parseInt(process.env.YOUTUBE_CACHE_TTL_HOURS || "6");
     const cacheTtlMs = cacheTtlHours * 60 * 60 * 1000;
 
     // Get the most recent video from our cache
@@ -29,36 +30,9 @@ export class YoutubeVideoCache {
     const lastFetched = new Date(latestCachedVideo.publishedAt);
     const timeDiff = now.getTime() - lastFetched.getTime();
 
+    // If cache is older than TTL, refresh it
     if (timeDiff > cacheTtlMs) {
-      // If cache is old, check latest video from YouTube API
-      const apiKey = process.env.YOUTUBE_API_KEY;
-
-      try {
-        const response = await fetch(
-          `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet&order=date&maxResults=1&type=video`
-        );
-
-        if (!response.ok) {
-          console.log(`YouTube API error, using cache: ${response.statusText}`);
-          return false;
-        }
-
-        const data = await response.json();
-
-        if (!data.items || data.items.length === 0) {
-          console.log("No new videos found, using cache");
-          return false;
-        }
-
-        const latestYouTubeVideo = data.items[0].snippet.publishedAt;
-        const latestYouTubeDate = new Date(latestYouTubeVideo);
-
-        // Compare dates to see if there are new videos
-        return latestYouTubeDate > lastFetched;
-      } catch (error) {
-        console.error("Error checking for new videos:", error);
-        return false; // On error, use cache
-      }
+      return true;
     }
 
     return false;

@@ -10,39 +10,22 @@ export const API_COSTS = {
 
 /**
  * Service pour gérer et suivre l'utilisation du quota de l'API YouTube
+ * (Quota control disabled - only tracks usage for information)
  */
 export class ApiQuotaService {
   /**
-   * Vérifie si suffisamment de quota est disponible pour l'opération demandée
+   * Always returns true - quota control disabled
    */
   static async hasAvailableQuota(
     operationType: keyof typeof API_COSTS,
     count: number = 1
   ): Promise<boolean> {
-    const quotaNeeded = API_COSTS[operationType] * count;
-    const dailyQuotaLimit = Number.MAX_SAFE_INTEGER; // Valeur très élevée pour ignorer la limite
-
-    // Get today's date at midnight UTC
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-
-    // Récupérer ou créer l'entrée pour aujourd'hui
-    let usage = await prisma.apiQuotaUsage.findUnique({
-      where: { date: today },
-    });
-
-    if (!usage) {
-      usage = await prisma.apiQuotaUsage.create({
-        data: { date: today, quotaUsed: 0 },
-      });
-    }
-
-    // Vérifier si le quota disponible est suffisant
-    return usage.quotaUsed + quotaNeeded <= dailyQuotaLimit;
+    // Always return true - no quota control
+    return true;
   }
 
   /**
-   * Enregistre l'utilisation du quota après une opération API
+   * Tracks API usage for informational purposes only
    */
   static async trackQuotaUsage(
     operationType: keyof typeof API_COSTS,
@@ -54,7 +37,7 @@ export class ApiQuotaService {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    // Mettre à jour l'utilisation du quota pour aujourd'hui
+    // Update quota usage for today (for informational purposes only)
     await prisma.apiQuotaUsage.upsert({
       where: { date: today },
       update: {
@@ -68,14 +51,14 @@ export class ApiQuotaService {
   }
 
   /**
-   * Récupère l'utilisation actuelle du quota pour aujourd'hui
+   * Gets current usage information (for display only)
    */
   static async getCurrentUsage(): Promise<{
     used: number;
     limit: number;
     remaining: number;
   }> {
-    const dailyQuotaLimit = Number.MAX_SAFE_INTEGER; // Valeur très élevée pour ignorer la limite
+    const dailyQuotaLimit = Number.MAX_SAFE_INTEGER; // Very high value - no limit
 
     // Get today's date at midnight UTC
     const today = new Date();

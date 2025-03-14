@@ -306,8 +306,8 @@ export default function VideoDetailPage() {
                             key={state}
                             onClick={() => handleStateChange(state)}
                             className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${isCurrentState
-                                ? `${stateStyle.bg} font-medium` // Highlight current state
-                                : 'hover:bg-gray-700'
+                              ? `${stateStyle.bg} font-medium` // Highlight current state
+                              : 'hover:bg-gray-700'
                               }`}
                           >
                             <span className={stateStyle.text}>{stateStyle.icon}</span>
