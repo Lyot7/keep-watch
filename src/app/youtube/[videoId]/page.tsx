@@ -80,7 +80,33 @@ export default function VideoDetailPage() {
           throw new Error('Failed to fetch video details');
         }
         const videoData = await response.json();
+        console.log('Fetched video data:', videoData);
+        console.log('Incoming video state:', videoData.state);
+
+        // Enhanced state extraction logic - prioritize videoState.state
+        let actualState: string | null = null;
+
+        // Try all possible locations where state might be stored in proper priority order
+        if (videoData.videoState && typeof videoData.videoState.state === 'string' && videoData.videoState.state.trim() !== '') {
+          // State in videoState object (highest priority)
+          actualState = videoData.videoState.state;
+          console.log('Using state from videoState object (highest priority):', actualState);
+        } else if (typeof videoData.state === 'string' && videoData.state.trim() !== '') {
+          // Direct state property (secondary priority)
+          actualState = videoData.state;
+          console.log('Using direct state property:', actualState);
+        } else {
+          // Default state (fallback)
+          actualState = "A voir !";
+          console.log('No valid state found, defaulting to:', actualState);
+        }
+
+        // Set the state on the video object
+        videoData.state = actualState;
+        console.log('Final video state set to:', videoData.state);
+
         setVideo(videoData);
+        console.log('Set video with state:', videoData.state);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -126,14 +152,33 @@ export default function VideoDetailPage() {
       }
     };
 
+    // Reset state when video ID changes
+    setLoading(true);
+    setError(null);
+    setVideo(null);
+
     if (videoId) {
       fetchVideoDetails();
       fetchRecommendations();
     }
   }, [videoId]);
 
+  useEffect(() => {
+    console.log("Component mounted or video state changed - current state:", video?.state);
+
+    // Ensure dropdown shows the correct initial state in the dropdown list
+    if (video) {
+      const dropdown = document.querySelector('.dropdown-menu');
+      if (dropdown) {
+        console.log("Dropdown found, ensuring correct state is highlighted");
+      }
+    }
+  }, [video?.state]);
+
   const handleStateChange = async (newState: string) => {
     if (!video) return;
+
+    console.log('Changing state from', video.state, 'to', newState);
 
     try {
       const response = await fetch('/api/videos/updateVideoState', {
@@ -153,8 +198,23 @@ export default function VideoDetailPage() {
         throw new Error('Failed to update video state');
       }
 
-      await response.json();
-      setVideo({ ...video, state: newState });
+      const updatedData = await response.json();
+      console.log('Received updated data:', updatedData);
+
+      // Make sure we're using the state from the response
+      const updatedState = updatedData.state || newState;
+
+      // Update the state in the UI
+      setVideo(prevVideo => {
+        if (!prevVideo) return null;
+        const updatedVideo = { ...prevVideo, state: updatedState };
+        console.log('Updated video object:', updatedVideo);
+        return updatedVideo;
+      });
+
+      console.log('Updated video state to:', updatedState);
+
+      // Close the dropdown
       setIsEditing(false);
     } catch (err) {
       console.error('Error updating video state:', err);
@@ -184,7 +244,13 @@ export default function VideoDetailPage() {
     );
   }
 
-  const videoStyles = getStateStyles(video.state || "");
+  // Get the styled appearance for the video's state
+  const videoState = video.state || "";
+  const videoStyles = getStateStyles(videoState);
+
+  // Log the current state for debugging
+  console.log('Rendering with video state:', videoState);
+  console.log('State styles applied:', videoStyles);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4 md:p-6">
@@ -218,9 +284,10 @@ export default function VideoDetailPage() {
                 <div className="relative">
                   <button
                     onClick={() => setIsEditing(!isEditing)}
-                    className={`px-4 py-2 ${videoStyles.bg} ${videoStyles.border} ${videoStyles.hoverBorder} rounded-md text-sm flex items-center gap-2`}
+                    className={`px-4 py-2 ${videoStyles.bg} ${videoStyles.border} ${videoStyles.hoverBorder} rounded-md text-sm flex items-center gap-2 transition-all duration-200 hover:shadow-md`}
+                    title="Click to change video state"
                   >
-                    <span className={videoStyles.text}>
+                    <span className={`${videoStyles.text} font-medium`}>
                       {videoStyles.icon} {video.state || 'Set Status'}
                     </span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -229,19 +296,25 @@ export default function VideoDetailPage() {
                   </button>
 
                   {isEditing && (
-                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg z-10">
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg z-10 dropdown-menu">
                       {STATES.map((state) => {
                         const stateStyle = getStateStyles(state);
+                        const isCurrentState = state === video.state;
+
                         return (
                           <button
                             key={state}
                             onClick={() => handleStateChange(state)}
-                            className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${state === video.state
-                              ? stateStyle.bg
-                              : 'hover:bg-gray-700'
+                            className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 ${isCurrentState
+                                ? `${stateStyle.bg} font-medium` // Highlight current state
+                                : 'hover:bg-gray-700'
                               }`}
                           >
-                            <span className={stateStyle.text}>{stateStyle.icon}</span> {state}
+                            <span className={stateStyle.text}>{stateStyle.icon}</span>
+                            {state}
+                            {isCurrentState && (
+                              <span className="ml-auto">✓</span> // Checkmark for current state
+                            )}
                           </button>
                         );
                       })}

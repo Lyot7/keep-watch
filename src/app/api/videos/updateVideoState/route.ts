@@ -53,9 +53,17 @@ export async function POST(request: Request) {
     }
 
     // Also update the state in the YoutubeVideoCache
-    await prisma.youtubeVideoCache.update({
+    const updatedVideo = await prisma.youtubeVideoCache.update({
       where: { videoId },
       data: { state },
+    });
+
+    console.log("State updated in database:", {
+      videoId,
+      oldState: video.state,
+      newState: state,
+      videoStateObj: videoState.state,
+      updatedVideoObj: updatedVideo.state,
     });
 
     // Serialize dates for JSON response
@@ -63,6 +71,8 @@ export async function POST(request: Request) {
       ...videoState,
       createdAt: videoState.createdAt.toISOString(),
       updatedAt: videoState.updatedAt.toISOString(),
+      // Include the state directly at top level for easier access
+      state: state,
     };
 
     return NextResponse.json(serializedState);
