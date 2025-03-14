@@ -2,6 +2,7 @@
 import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { decodeHtml } from "@/utils/decodeHtml";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FiEdit } from "react-icons/fi";
 
@@ -57,6 +58,7 @@ const getStateStyles = (state: string) => {
 };
 
 const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => {
+  const router = useRouter();
   const [updatingState, setUpdatingState] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState<string | null>(null);
   const [cardWidth, setCardWidth] = useState(0);
@@ -198,7 +200,12 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
               <li
                 key={video.id}
                 className={`${marginClasses} ${videoStyles.cardBg} rounded-xl overflow-hidden w-full shadow-lg hover:shadow-xl transition-all cursor-pointer relative border ${videoStyles.cardBorder} ${videoStyles.hoverBorder}`}
-                onClick={() => window.open(video.videoUrl, '_blank', 'noopener,noreferrer')}
+                onClick={(e) => {
+                  // Stop propagation to prevent triggering modals
+                  e.stopPropagation();
+                  // Navigate to video detail page
+                  router.push(`/youtube/${video.id}`);
+                }}
                 ref={modalVisible === video.id ? cardRef : null}
               >
                 <div className="w-full relative aspect-video">
