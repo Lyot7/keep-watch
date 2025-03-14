@@ -414,12 +414,34 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
           </h3>
 
           <div className="space-y-3">
-            {/* Afficher les dernières vidéos ajoutées */}
+            {/* Afficher les dernières vidéos ajoutées, triées par date de publication la plus récente */}
             {youtubeVideos
               .sort((a, b) => {
+                // Helper function to parse formatted date strings like "15 Janvier 2025"
+                const parseFormattedDate = (dateString: string): Date => {
+                  const monthsMapping: { [key: string]: number } = {
+                    "Janvier": 0, "Février": 1, "Mars": 2, "Avril": 3, "Mai": 4, "Juin": 5,
+                    "Juillet": 6, "Août": 7, "Septembre": 8, "Octobre": 9, "Novembre": 10, "Décembre": 11
+                  };
+
+                  try {
+                    const parts = dateString.split(' ');
+                    if (parts.length !== 3) return new Date(); // Invalid date
+
+                    const day = parseInt(parts[0], 10);
+                    const month = monthsMapping[parts[1]];
+                    const year = parseInt(parts[2], 10);
+
+                    return new Date(year, month, day);
+                  } catch (error) {
+                    console.error('Error parsing date:', dateString, error);
+                    return new Date(); // Return current date in case of error
+                  }
+                };
+
                 // Trier par date de publication décroissante (la plus récente en premier)
-                const dateA = new Date(a.publishedAt);
-                const dateB = new Date(b.publishedAt);
+                const dateA = parseFormattedDate(a.publishedAt);
+                const dateB = parseFormattedDate(b.publishedAt);
                 return dateB.getTime() - dateA.getTime();
               })
               .slice(0, 3)

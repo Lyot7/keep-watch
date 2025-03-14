@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       // Randomize the results
       videos = videos.sort(() => 0.5 - Math.random()).slice(0, limit);
     } else {
-      // For regular queries, just use the limit directly
+      // For regular queries, just use the limit directly and sort by newest
       videos = await prisma.youtubeVideoCache.findMany({
         where,
         include: {

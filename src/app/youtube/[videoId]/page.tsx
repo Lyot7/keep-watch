@@ -116,10 +116,10 @@ export default function VideoDetailPage() {
 
     const fetchRecommendations = async () => {
       try {
-        // First try to get videos with "A voir !" state
-        let recsResponse = await fetch('/api/videos?state=A%20voir%20!&limit=8');
+        // Get videos with "A voir !" state and randomize them
+        let recsResponse = await fetch('/api/videos?state=A%20voir%20!&limit=8&random=true');
         let recsData = await recsResponse.json();
-        console.log('Recommendations with "A voir !" state:', recsData);
+        console.log('Recommendations with "A voir !" state (randomized):', recsData);
 
         // Check if the response has the expected structure
         let recommendationVideos = Array.isArray(recsData) ? recsData :
