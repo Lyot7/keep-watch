@@ -70,6 +70,20 @@ export default function VideoDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Add mounted state to prevent hydration mismatch with router navigation
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    // Set mounted state after component mounts to safely use router
+    setIsMounted(true);
+  }, []);
+
+  // Safe navigation function
+  const navigateTo = (path: string) => {
+    if (isMounted) {
+      router.push(path);
+    }
+  };
 
   useEffect(() => {
     const fetchVideoDetails = async () => {
@@ -235,7 +249,7 @@ export default function VideoDetailPage() {
         <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
         <p className="text-gray-300 mb-6">{error || 'Video not found'}</p>
         <button
-          onClick={() => router.back()}
+          onClick={() => navigateTo('/')}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
         >
           Go Back
@@ -262,7 +276,7 @@ export default function VideoDetailPage() {
       <div className="max-w-7xl mx-auto relative z-10 p-4 md:p-6">
         <div className="mb-4">
           <button
-            onClick={() => router.push('/')}
+            onClick={() => navigateTo('/')}
             className="px-5 py-2 bg-gray-800 bg-opacity-80 hover:bg-gray-700 text-white rounded-full transition-colors flex items-center gap-2 border border-gray-700"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -364,7 +378,7 @@ export default function VideoDetailPage() {
                         key={rec.videoId || rec.id}
                         className="flex gap-3 p-2 rounded-lg hover:bg-gray-700 hover:bg-opacity-80 transition-colors cursor-pointer bg-opacity-60"
                         onClick={() => {
-                          router.push(`/youtube/${rec.videoId || rec.id}`);
+                          navigateTo(`/youtube/${rec.videoId || rec.id}`);
                         }}
                       >
                         <div className="w-40 min-w-[100px] aspect-video relative">
