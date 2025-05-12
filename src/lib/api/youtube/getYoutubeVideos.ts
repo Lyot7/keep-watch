@@ -1,5 +1,5 @@
-import { ApiQuotaService } from "@/libs/apiQuotaService";
-import { YoutubeVideoCache } from "@/libs/youtubeVideoCache";
+import { ApiQuotaService } from "@/lib/api/apiQuotaService";
+import { YoutubeVideoCache } from "@/lib/api/youtube/youtubeVideoCache";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 

@@ -1,5 +1,6 @@
-import prisma from "@/backend/infrastructure/database/prisma/client";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
 
 export async function GET(request: Request) {
   try {

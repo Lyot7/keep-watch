@@ -1,6 +1,6 @@
 "use client";
-import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
-import { decodeHtml } from "@/utils/decodeHtml";
+import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
+import { decodeHtml } from "@/lib/utils/decodeHtml";
 import { useEffect, useRef, useState } from "react";
 import { FiClock, FiClock as FiDuration, FiPieChart, FiStar, FiTag, FiThumbsDown, FiThumbsUp } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -43,7 +43,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   // Navigation function that only works after component is mounted
   const navigateToVideo = (videoId: string) => {
     if (isMounted) {
-      router.push(`/youtube/${videoId}`);
+      router.push(`/${videoId}`);
     }
   };
 

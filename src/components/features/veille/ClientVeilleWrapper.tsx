@@ -1,7 +1,7 @@
 "use client";
 
-import Veille from "@/libs/Veille/VeilleScreen";
-import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
+import Veille from "@/components/features/veille/VeilleScreen";
+import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
 import { useEffect, useState } from "react";
 
 interface ClientVeilleWrapperProps {

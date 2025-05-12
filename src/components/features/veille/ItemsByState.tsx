@@ -1,6 +1,6 @@
 "use client";
-import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
-import { decodeHtml } from "@/utils/decodeHtml";
+import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
+import { decodeHtml } from "@/lib/utils/decodeHtml";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -204,7 +204,7 @@ const ItemsByState: React.FC<ItemsByStateProps> = ({ youtubeVideos, state }) => 
                   // Stop propagation to prevent triggering modals
                   e.stopPropagation();
                   // Navigate to video detail page
-                  router.push(`/youtube/${video.id}`);
+                  router.push(`/${video.id}`);
                 }}
                 ref={modalVisible === video.id ? cardRef : null}
               >

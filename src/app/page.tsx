@@ -1,5 +1,5 @@
-import ClientVeilleWrapper from "@/components/ClientVeilleWrapper";
-import { getYoutubeVideos, YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
+import { ClientVeilleWrapper } from "@/components/features/veille";
+import { getYoutubeVideos, YoutubeVideo } from "@/lib/api/youtube";
 import { PrismaClient } from "@prisma/client";
 import { Suspense } from "react";
 

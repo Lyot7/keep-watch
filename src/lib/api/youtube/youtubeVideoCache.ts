@@ -1,5 +1,5 @@
-import { YoutubeVideo } from "@/frontend/pages/api/youtube/getYoutubeVideos";
 import { PrismaClient } from "@prisma/client";
+import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
 
 const prisma = new PrismaClient();
 

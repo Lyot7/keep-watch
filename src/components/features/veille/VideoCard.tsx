@@ -1,7 +1,7 @@
 "use client";
 
 import { VideoState } from "@/types/videoState";
-import { decodeHtml } from "@/utils/decodeHtml";
+import { decodeHtml } from "@/lib/utils/decodeHtml";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,7 +10,7 @@ interface VideoCardProps {
   video: VideoState;
 }
 
-export function VideoCard({ video }: VideoCardProps) {
+export default function VideoCard({ video }: VideoCardProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [currentState, setCurrentState] = useState(video.state);
@@ -44,7 +44,7 @@ export function VideoCard({ video }: VideoCardProps) {
   };
 
   const handleCardClick = () => {
-    router.push(`/youtube/${video.videoId}`);
+    router.push(`/${video.videoId}`);
   };
 
   return (

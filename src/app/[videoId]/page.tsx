@@ -1,7 +1,7 @@
 "use client";
 
 import { VideoState } from '@/types/videoState';
-import { decodeHtml } from '@/utils/decodeHtml';
+import { decodeHtml } from '@/lib/utils/decodeHtml';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -378,7 +378,7 @@ export default function VideoDetailPage() {
                         key={rec.videoId || rec.id}
                         className="flex gap-3 p-2 rounded-lg hover:bg-gray-700 hover:bg-opacity-80 transition-colors cursor-pointer bg-opacity-60"
                         onClick={() => {
-                          navigateTo(`/youtube/${rec.videoId || rec.id}`);
+                          navigateTo(`/${rec.videoId || rec.id}`);
                         }}
                       >
                         <div className="w-40 min-w-[100px] aspect-video relative">
