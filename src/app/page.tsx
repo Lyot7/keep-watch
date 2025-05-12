@@ -1,4 +1,4 @@
-import Veille from "@/libs/Veille/VeilleScreen";
+import ClientVeilleWrapper from "@/components/ClientVeilleWrapper";
 import { getYoutubeVideos, YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { PrismaClient } from "@prisma/client";
 import { Suspense } from "react";
@@ -55,6 +55,9 @@ export default async function Page() {
     };
   });
 
+  // Ensure data is serializable
+  const serializedVideos = JSON.parse(JSON.stringify(videosWithState));
+
   return (
     <main className="min-h-screen bg-black text-white relative">
       {/* Grille en perspective en arrière-plan */}
@@ -73,7 +76,7 @@ export default async function Page() {
         </header>
 
         <Suspense fallback={<div>Chargement des vidéos...</div>}>
-          <Veille youtubeVideos={videosWithState} />
+          <ClientVeilleWrapper initialVideos={serializedVideos} />
         </Suspense>
 
         <footer className="mt-16 pt-8 border-t border-gray-700 text-center text-gray-400">

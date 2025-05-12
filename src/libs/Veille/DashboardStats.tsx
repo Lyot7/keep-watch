@@ -30,8 +30,22 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   onStateFilterToggle,
   onThemeFilterToggle
 }) => {
-  // Add router for navigation
+  // Use router for navigation with safe handling for server/client rendering
   const router = useRouter();
+  // Add state to track if we're on client side
+  const [isMounted, setIsMounted] = useState(false);
+  
+  // Set mounted state after component is mounted
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+  
+  // Navigation function that only works after component is mounted
+  const navigateToVideo = (videoId: string) => {
+    if (isMounted) {
+      router.push(`/youtube/${videoId}`);
+    }
+  };
 
   // Calculate total number of videos
   const totalVideos = youtubeVideos.length;
@@ -142,14 +156,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     },
   ];
 
-  // État pour le rendu côté client uniquement
-  const [isClient, setIsClient] = useState(false);
-
-  // S'assurer que le rendu est cohérent entre serveur et client
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   // Trier les thèmes par nombre de vidéos (du plus grand au plus petit)
   const sortedThemes = Object.entries(countByTheme)
     .sort((a, b) => b[1] - a[1]);
@@ -171,7 +177,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   // Création du donut chart avec CSS
   useEffect(() => {
     // Ne s'exécute que côté client
-    if (!donutChartRef.current || !isClient) return;
+    if (!donutChartRef.current || !isMounted) return;
 
     // Nettoyer les anciens styles
     const oldStyle = document.getElementById('donut-chart-style');
@@ -216,7 +222,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     `;
 
     document.head.appendChild(style);
-  }, [categoryStats, isClient]); // Ajouter isClient aux dépendances
+  }, [categoryStats, isMounted]); // Ajouter isMounted aux dépendances
 
   return (
     <div className="mb-10 bg-gray-800 bg-opacity-50 rounded-xl p-6 shadow-lg border border-gray-700 backdrop-blur-sm">
@@ -252,8 +258,8 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
           <h3 className="text-lg font-medium mb-5 text-blue-300 text-center">Répartition</h3>
 
           <div className="relative" style={{ width: '180px', height: '180px' }}>
-            {/* Rendu conditionnel du donut chart en fonction de isClient */}
-            {isClient ? (
+            {/* Rendu conditionnel du donut chart en fonction de isMounted */}
+            {isMounted ? (
               <div className="donut-chart-container absolute inset-0 rounded-full" ref={donutChartRef}
                 style={{
                   clipPath: 'circle(50%)',
@@ -276,7 +282,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 
             {/* Overlay pour les interactions */}
             <div className="absolute inset-0 rounded-full" style={{ pointerEvents: 'none' }}>
-              {isClient && (
+              {isMounted && (
                 <>
                   {categoryStats.map((stat, index) => {
                     if (stat.percentage <= 0) return null;
@@ -335,7 +341,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
             const baseIconClass = "rounded-full p-2 bg-gray-900";
 
             // Si côté client, on peut ajouter des classes conditionnelles
-            if (isClient) {
+            if (isMounted) {
               const isActive = activeStateFilters.includes(stat.stateKey);
               let statCardClasses = baseCardClass;
               let iconBgClass = baseIconClass;
@@ -480,7 +486,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
                   <div 
                     key={video.id} 
                     className="bg-gray-900 bg-opacity-90 rounded-lg p-3 hover:bg-gray-800 transition-colors shadow-md cursor-pointer"
-                    onClick={() => router.push(`/youtube/${video.id}`)}
+                    onClick={() => navigateToVideo(video.id)}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="font-medium text-sm line-clamp-1 flex-1 pr-2 text-white">
