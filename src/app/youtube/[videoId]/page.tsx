@@ -268,7 +268,7 @@ export default function VideoDetailPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Main Page
+            Retour à l'accueil
           </button>
         </div>
         <div className="flex flex-col lg:flex-row gap-6">
@@ -353,7 +353,7 @@ export default function VideoDetailPage() {
           {/* Sidebar - Recommendations */}
           <div className="lg:w-1/3">
             <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm p-4 rounded-lg">
-              <h2 className="text-lg font-bold mb-4">Recommended Videos</h2>
+              <h2 className="text-lg font-bold mb-4">Vidéos recommandées</h2>
 
               {recommendations.length > 0 ? (
                 <div className="space-y-4">
@@ -403,7 +403,7 @@ export default function VideoDetailPage() {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-400 text-sm">No recommendations available</p>
+                  <p className="text-gray-400 text-sm">Aucune vidéo recommandée disponible</p>
               )}
             </div>
           </div>

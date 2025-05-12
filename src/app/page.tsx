@@ -77,7 +77,7 @@ export default async function Page() {
         </Suspense>
 
         <footer className="mt-16 pt-8 border-t border-gray-700 text-center text-gray-400">
-          <p>Développé avec Next.js, Tailwind CSS et l&apos;API YouTube</p>
+          <p>Développé avec Next.js, React, Tailwind, Prisma, TypeScript, Docker, PostgreSQL et l&apos;API YouTube</p>
         </footer>
       </div>
     </main>

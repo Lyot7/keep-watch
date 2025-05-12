@@ -3,6 +3,7 @@ import { YoutubeVideo } from "@/pages/api/youtube/getYoutubeVideos";
 import { decodeHtml } from "@/utils/decodeHtml";
 import { useEffect, useRef, useState } from "react";
 import { FiClock, FiClock as FiDuration, FiPieChart, FiStar, FiTag, FiThumbsDown, FiThumbsUp } from "react-icons/fi";
+import { useRouter } from "next/navigation";
 
 interface DashboardStatsProps {
   youtubeVideos: YoutubeVideo[];
@@ -29,6 +30,9 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
   onStateFilterToggle,
   onThemeFilterToggle
 }) => {
+  // Add router for navigation
+  const router = useRouter();
+
   // Calculate total number of videos
   const totalVideos = youtubeVideos.length;
 
@@ -473,7 +477,11 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
                   : '';
 
                 return (
-                  <div key={video.id} className="bg-gray-900 bg-opacity-90 rounded-lg p-3 hover:bg-gray-800 transition-colors shadow-md">
+                  <div 
+                    key={video.id} 
+                    className="bg-gray-900 bg-opacity-90 rounded-lg p-3 hover:bg-gray-800 transition-colors shadow-md cursor-pointer"
+                    onClick={() => router.push(`/youtube/${video.id}`)}
+                  >
                     <div className="flex justify-between items-start mb-2">
                       <div className="font-medium text-sm line-clamp-1 flex-1 pr-2 text-white">
                         {safeTitle}
