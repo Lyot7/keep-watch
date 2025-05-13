@@ -1,4 +1,3 @@
-import { ApiQuotaService } from "@/lib/api/apiQuotaService";
 import { YoutubeVideoCache } from "@/lib/api/youtube/youtubeVideoCache";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
@@ -157,9 +156,6 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
           `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channel.id}&part=snippet,id&order=date&maxResults=${maxResultsPerChannel}&type=video`
         );
 
-        // Tracker l'utilisation du quota après la requête (for informational purposes only)
-        await ApiQuotaService.trackQuotaUsage("SEARCH");
-
         if (!response.ok) {
           console.log(`YouTube API error: ${response.statusText}`);
           // On error, try to use cached data even if expired
@@ -182,15 +178,13 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
           .map((item: YouTubeApiItem) => item.id.videoId)
           .join(",");
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const videoCount = data.items.length;
 
         // 2. Récupérer les détails des vidéos, y compris la durée
         const videoDetailsResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=contentDetails,snippet`
         );
-
-        // Tracker l'utilisation du quota après la requête (for informational purposes only)
-        await ApiQuotaService.trackQuotaUsage("VIDEO_DETAILS", videoCount);
 
         if (!videoDetailsResponse.ok) {
           console.log(`YouTube API error: ${videoDetailsResponse.statusText}`);

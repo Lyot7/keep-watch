@@ -1,6 +1,8 @@
-import prisma from "@/backend/infrastructure/database/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { YoutubeVideoCache } from "@/shared/types/YoutubeVideoCache";
 import { NextApiRequest, NextApiResponse } from "next";
+
+const prisma = new PrismaClient();
 
 type VideoQueryParams = {
   state?: string;

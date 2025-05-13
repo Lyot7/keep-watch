@@ -1,4 +1,4 @@
-import { VideoCard } from "@/components/VideoCard";
+import { VideoCard } from "@/frontend/components/VideoCard";
 import { VideoState } from "@/types/videoState";
 
 interface ItemsByStateProps {

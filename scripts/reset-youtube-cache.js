@@ -32,12 +32,6 @@ async function resetYoutubeCache() {
       );
     }
 
-    // 3. Vider les statistiques d'utilisation de l'API pour repartir de zéro
-    const deletedQuotaStats = await prisma.apiQuotaUsage.deleteMany({});
-    console.log(
-      `✅ ${deletedQuotaStats.count} entrées d'utilisation de quota supprimées`
-    );
-
     console.log(
       "\n✨ Réinitialisation terminée ! Vous pouvez maintenant redémarrer l'application pour récupérer toutes les vidéos."
     );

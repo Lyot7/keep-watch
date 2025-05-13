@@ -81,10 +81,3 @@ model VideoTheme {
 
   @@unique([videoId, themeId])
 }
-
-model ApiQuotaUsage {
-  id          String   @id @default(uuid())
-  date        DateTime @unique @default(now()) @db.Date
-  quotaUsed   Int      @default(0)
-  description String?
-}

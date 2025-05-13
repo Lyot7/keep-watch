@@ -11,7 +11,7 @@
  * Run with: docker-compose run --rm demo
  */
 
-import { YoutubeService } from "@/libs/youtubeService";
+import { YoutubeService } from "../../src/lib/api/youtube/youtubeService";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 

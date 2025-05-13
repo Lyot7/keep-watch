@@ -1,7 +1,7 @@
 "use client";
 import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
 import { decodeHtml } from "@/lib/utils/decodeHtml";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { FiClock, FiClock as FiDuration, FiPieChart, FiStar, FiTag, FiThumbsDown, FiThumbsUp } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 
@@ -13,6 +13,7 @@ interface DashboardStatsProps {
   onThemeFilterToggle: (theme: string) => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface CategoryStat {
   name: string;
   count: number;
@@ -62,13 +63,25 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     return `${hours}h ${minutes}m`;
   };
 
-  // Compter les vidéos par état
-  const countByState: Record<string, number> = {
-    "A voir !": 0,
-    "Recommander": 0,
-    "Impressionnant": 0,
-    "Ne pas recommander": 0
-  };
+  // Compter les vidéos par état - wrap in useMemo to avoid dependency changes on every render
+  const countByState = useMemo(() => {
+    const counts: Record<string, number> = {
+      "A voir !": 0,
+      "Recommander": 0,
+      "Impressionnant": 0,
+      "Ne pas recommander": 0
+    };
+    
+    // Remplir les compteurs
+    youtubeVideos.forEach((video) => {
+      // Compter par état
+      if (video.state && counts[video.state] !== undefined) {
+        counts[video.state]++;
+      }
+    });
+    
+    return counts;
+  }, [youtubeVideos]);
 
   // Compter les vidéos par thème
   const countByTheme: Record<string, number> = {};
@@ -116,8 +129,8 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     }
   });
 
-  // Créer les statistiques pour l'affichage
-  const categoryStats: CategoryStat[] = [
+  // Wrap categoryStats in useMemo
+  const categoryStats = useMemo(() => [
     {
       name: "Impressionnantes",
       count: countByState["Impressionnant"],
@@ -154,7 +167,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       percentage: totalVideos > 0 ? (countByState["Ne pas recommander"] / totalVideos) * 100 : 0,
       stateKey: "Ne pas recommander"
     },
-  ];
+  ], [countByState, totalVideos]);
 
   // Trier les thèmes par nombre de vidéos (du plus grand au plus petit)
   const sortedThemes = Object.entries(countByTheme)

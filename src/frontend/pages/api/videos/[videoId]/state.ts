@@ -1,6 +1,8 @@
 import { VideoState } from "@/backend/domain/models/YoutubeVideoCache";
-import prisma from "@/backend/infrastructure/database/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { NextApiRequest, NextApiResponse } from "next";
+
+const prisma = new PrismaClient();
 
 interface UpdateStateRequestBody {
   state: string;

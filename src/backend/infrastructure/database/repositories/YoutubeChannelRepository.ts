@@ -1,6 +1,8 @@
 import { IYoutubeChannelRepository } from "@/backend/domain/interfaces/IYoutubeChannelRepository";
 import { YoutubeChannel } from "@/backend/domain/models/YoutubeChannel";
-import prisma from "@/backend/infrastructure/database/prisma/client";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
 
 export class YoutubeChannelRepository implements IYoutubeChannelRepository {
   async findById(id: string): Promise<YoutubeChannel | null> {

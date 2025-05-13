@@ -1,11 +1,13 @@
-import prisma from "@/backend/infrastructure/database/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { NextResponse } from "next/server";
+
+const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
-  { params }: { params: { videoId: string } }
+  { params }: { params: Promise<{ videoId: string }> }
 ) {
-  const videoId = params.videoId;
+  const { videoId } = await params;
 
   if (!videoId) {
     return NextResponse.json(
@@ -15,7 +17,6 @@ export async function GET(
   }
 
   try {
-    // Fetch the video from the database
     const video = await prisma.youtubeVideoCache.findUnique({
       where: { videoId },
       include: {
@@ -32,24 +33,10 @@ export async function GET(
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
 
-    // Log raw state data to see what we're working with
-    console.log("Raw video state data:", {
-      directState: video.state,
-      videoStateObj: video.videoState
-        ? video.videoState.state
-        : "no videoState object",
-    });
-
-    // Determine the correct state with proper priority
-    // videoState.state has higher priority as it's the dedicated state storage
-    const finalState = video.videoState?.state || video.state || null;
-
-    // Convert dates to ISO strings for JSON serialization
-    const serializedVideo = {
+    // Transform dates to ISO strings for JSON serialization
+    const transformedVideo = {
       ...video,
       lastFetched: video.lastFetched.toISOString(),
-      // Explicitly set state at the top level with the correct priority
-      state: finalState,
       videoState: video.videoState
         ? {
             ...video.videoState,
@@ -57,26 +44,23 @@ export async function GET(
             updatedAt: video.videoState.updatedAt.toISOString(),
           }
         : null,
-      videoThemes: video.videoThemes.map((vt) => ({
-        ...vt,
-        createdAt: vt.createdAt.toISOString(),
-        updatedAt: vt.updatedAt.toISOString(),
-        theme: vt.theme
-          ? {
-              ...vt.theme,
-              createdAt: vt.theme.createdAt.toISOString(),
-              updatedAt: vt.theme.updatedAt.toISOString(),
-            }
-          : null,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      videoThemes: video.videoThemes.map((vt: any) => ({
+        id: vt.id,
+        theme: vt.theme ? {
+          id: vt.theme.id,
+          name: vt.theme.name,
+          description: vt.theme.description,
+          color: vt.theme.color,
+        } : null,
       })),
     };
 
-    console.log("Returning video with state:", serializedVideo.state);
-    return NextResponse.json(serializedVideo);
+    return NextResponse.json(transformedVideo);
   } catch (error) {
     console.error("Error fetching video:", error);
     return NextResponse.json(
-      { error: "Failed to fetch video details" },
+      { error: "Failed to fetch video" },
       { status: 500 }
     );
   }

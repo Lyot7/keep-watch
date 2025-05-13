@@ -1,7 +1,7 @@
 "use client";
 
 import { VideoState } from "@/types/videoState";
-import { decodeHtml } from "@/utils/decodeHtml";
+import { decodeHtml } from "@/lib/utils/decodeHtml";
 import { useState } from "react";
 
 interface VideoCardProps {

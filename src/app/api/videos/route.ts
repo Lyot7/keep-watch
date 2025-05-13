@@ -1,6 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
+// import { NextRequest } from 'next/server';  
+// import { PrismaClient } from '@prisma/client';
+// import { YoutubeVideo } from '@/lib/api/youtube/getYoutubeVideos';
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+// Define type for VideoState
+type VideoStateType = {
+  id: string;
+  videoId: string;
+  state: string;
+  duration?: string | null;
+  durationSeconds?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  notes?: string | null;
+  rating?: number | null;
+};
+
+// Define the type for a video with videoState
+type VideoWithState = {
+  id: string;
+  videoId: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  channelTitle: string;
+  channelId: string;
+  publishedAt: string;
+  videoUrl: string;
+  duration: string;
+  durationSeconds: number;
+  state: string;
+  theme?: string | null;
+  videoState?: VideoStateType | null;
+  // Use Record instead of index signature with any
+  [key: string]: unknown;
+};
 
 export async function GET(request: Request) {
   try {
@@ -47,7 +84,7 @@ export async function GET(request: Request) {
     }
 
     // Transform the data to match the VideoState interface
-    const transformedVideos = videos.map((video) => ({
+    const transformedVideos = videos.map((video: VideoWithState) => ({
       id: video.id,
       videoId: video.videoId,
       title: video.title,
