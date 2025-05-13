@@ -66,9 +66,13 @@ const formatDate = async (video: ExtendedVideoState | null): Promise<string> => 
   // Debug the video object to see all available properties
   console.log('Video object for date:', video);
   
+  // First, check directly for publishedAt property - return it as is without reformatting
+  if (video.publishedAt && typeof video.publishedAt === 'string') {
+    return video.publishedAt;
+  }
+  
   // Try multiple possible locations for the date
   const possibleDates = [
-    video.publishedAt,
     video.snippet?.publishedAt,
     video.videoState?.publishedAt,
     video.publishDate,
@@ -102,16 +106,22 @@ const formatDate = async (video: ExtendedVideoState | null): Promise<string> => 
       return 'Date inconnue';
     }
     
-    // Format the date in a French locale with year, month, day
-    return date.toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    // Format with full month name
+    return formatDateToFrenchStyle(date);
   } catch (e) {
     console.error('Error formatting date:', e);
     return 'Date inconnue';
   }
+};
+
+// Helper function to consistently format dates in French style with full month name
+const formatDateToFrenchStyle = (date: Date): string => {
+  // Format the date in a French locale with day, full month name, and year
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 };
 
 // Color schemes by state - same as in ItemsByState.tsx
