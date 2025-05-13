@@ -1,6 +1,7 @@
 "use client";
 import { YoutubeVideo } from "@/lib/api/youtube/getYoutubeVideos";
 import { decodeHtml } from "@/lib/utils/decodeHtml";
+import { formatDate, parseFormattedDate, formatRelativeDate } from "@/lib/utils/dateFormatter";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { FiClock, FiClock as FiDuration, FiPieChart, FiStar, FiTag, FiThumbsDown, FiThumbsUp } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -449,28 +450,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
             {/* Afficher les dernières vidéos ajoutées, triées par date de publication la plus récente */}
             {youtubeVideos
               .sort((a, b) => {
-                // Helper function to parse formatted date strings like "15 Janvier 2025"
-                const parseFormattedDate = (dateString: string): Date => {
-                  const monthsMapping: { [key: string]: number } = {
-                    "Janvier": 0, "Février": 1, "Mars": 2, "Avril": 3, "Mai": 4, "Juin": 5,
-                    "Juillet": 6, "Août": 7, "Septembre": 8, "Octobre": 9, "Novembre": 10, "Décembre": 11
-                  };
-
-                  try {
-                    const parts = dateString.split(' ');
-                    if (parts.length !== 3) return new Date(); // Invalid date
-
-                    const day = parseInt(parts[0], 10);
-                    const month = monthsMapping[parts[1]];
-                    const year = parseInt(parts[2], 10);
-
-                    return new Date(year, month, day);
-                  } catch (error) {
-                    console.error('Error parsing date:', dateString, error);
-                    return new Date(); // Return current date in case of error
-                  }
-                };
-
                 // Trier par date de publication décroissante (la plus récente en premier)
                 const dateA = parseFormattedDate(a.publishedAt);
                 const dateB = parseFormattedDate(b.publishedAt);
@@ -485,19 +464,6 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
                       video.state === "A voir !" ? "text-blue-400" :
                         video.state === "Ne pas recommander" ? "text-red-400" :
                           "text-gray-400";
-
-                // Formater la date relative (aujourd'hui, hier, etc.)
-                const formatRelativeDate = (dateStr: string) => {
-                  const date = new Date(dateStr);
-                  const now = new Date();
-                  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-                  if (diffDays === 0) return "Aujourd'hui";
-                  if (diffDays === 1) return "Hier";
-                  if (diffDays < 7) return `Il y a ${diffDays} jours`;
-
-                  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-                };
 
                 // Échapper les caractères spéciaux dans le titre
                 const safeTitle = video.title

@@ -1,6 +1,7 @@
 import { YoutubeVideoCache } from "@/lib/api/youtube/youtubeVideoCache";
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
+import { formatDate } from "@/lib/utils/dateFormatter";
 
 dotenv.config();
 
@@ -253,26 +254,3 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
     return [];
   }
 }
-
-// Helper function to format ISO date string to "15 Janvier 2025"
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const months = [
-    "Janvier",
-    "Février",
-    "Mars",
-    "Avril",
-    "Mai",
-    "Juin",
-    "Juillet",
-    "Août",
-    "Septembre",
-    "Octobre",
-    "Novembre",
-    "Décembre",
-  ];
-  const day = date.getDate();
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
-};

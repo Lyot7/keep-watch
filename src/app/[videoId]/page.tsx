@@ -2,6 +2,7 @@
 
 import { VideoState } from '@/types/videoState';
 import { decodeHtml } from '@/lib/utils/decodeHtml';
+import { formatDate } from '@/lib/utils/dateFormatter';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -12,8 +13,15 @@ const DateDisplay = ({ video }: { video: ExtendedVideoState }) => {
 
   useEffect(() => {
     const getDate = async () => {
-      const date = await formatDate(video);
-      setFormattedDate(date);
+      // Use publishedAt as is if it exists
+      if (video.publishedAt) {
+        setFormattedDate(video.publishedAt);
+        return;
+      }
+
+      // Otherwise try to format it from other sources
+      let dateString = await getDateFromSources(video);
+      setFormattedDate(dateString);
     };
 
     getDate();
@@ -49,7 +57,8 @@ const fetchYouTubePublishedDate = async (videoId: string): Promise<string | null
     
     const data = await response.json();
     if (data.items && data.items.length > 0 && data.items[0].snippet && data.items[0].snippet.publishedAt) {
-      return data.items[0].snippet.publishedAt;
+      // Format the date before returning
+      return formatDate(data.items[0].snippet.publishedAt);
     }
     
     return null;
@@ -60,7 +69,7 @@ const fetchYouTubePublishedDate = async (videoId: string): Promise<string | null
 };
 
 // Date formatter helper function with YouTube API fallback
-const formatDate = async (video: ExtendedVideoState | null): Promise<string> => {
+const getDateFromSources = async (video: ExtendedVideoState | null): Promise<string> => {
   if (!video) return 'Date inconnue';
   
   // Debug the video object to see all available properties
@@ -97,31 +106,8 @@ const formatDate = async (video: ExtendedVideoState | null): Promise<string> => 
     return 'Date inconnue';
   }
   
-  try {
-    // Use the date string we found
-    const date = new Date(dateString);
-    // Check if date is valid
-    if (isNaN(date.getTime())) {
-      console.log('Invalid date detected:', dateString);
-      return 'Date inconnue';
-    }
-    
-    // Format with full month name
-    return formatDateToFrenchStyle(date);
-  } catch (e) {
-    console.error('Error formatting date:', e);
-    return 'Date inconnue';
-  }
-};
-
-// Helper function to consistently format dates in French style with full month name
-const formatDateToFrenchStyle = (date: Date): string => {
-  // Format the date in a French locale with day, full month name, and year
-  return date.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  // All dates not coming from publishedAt will be formatted
+  return formatDate(dateString);
 };
 
 // Color schemes by state - same as in ItemsByState.tsx
