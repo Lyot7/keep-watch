@@ -72,8 +72,16 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
       "Ne pas recommander": 0
     };
     
-    // Remplir les compteurs
+    const processedIds = new Set<string>();
+    
+    // Remplir les compteurs en évitant les doublons
     youtubeVideos.forEach((video) => {
+      if (!video.id || processedIds.has(video.id)) {
+        return; // Ignorer les vidéos sans ID ou déjà comptées
+      }
+      
+      processedIds.add(video.id);
+      
       // Compter par état
       if (video.state && counts[video.state] !== undefined) {
         counts[video.state]++;
@@ -85,7 +93,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 
   // Compter les vidéos par thème
   const countByTheme: Record<string, number> = {};
-
+  
   // Calculer des stats par mois (pour les 6 derniers mois)
   const getRecentMonths = () => {
     const months = [];
@@ -103,20 +111,21 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     recentMonths.map(month => [month, 0])
   );
 
+  // Ensemble pour suivre les IDs des vidéos déjà comptées
+  const processedThemeIds = new Set<string>();
+  const processedMonthIds = new Set<string>();
+
   // Remplir les compteurs
   youtubeVideos.forEach((video) => {
-    // Compter par état
-    if (video.state && countByState[video.state] !== undefined) {
-      countByState[video.state]++;
-    }
-
-    // Compter par thème
-    if (video.theme) {
+    // Compter par thème (en évitant les doublons)
+    if (video.theme && !processedThemeIds.has(video.id)) {
+      processedThemeIds.add(video.id);
       countByTheme[video.theme] = (countByTheme[video.theme] || 0) + 1;
     }
 
-    // Compter par mois
-    if (video.publishedAt) {
+    // Compter par mois (en évitant les doublons)
+    if (video.publishedAt && !processedMonthIds.has(video.id)) {
+      processedMonthIds.add(video.id);
       try {
         const date = new Date(video.publishedAt);
         const monthYear = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });

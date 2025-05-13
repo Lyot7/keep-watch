@@ -11,6 +11,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "prisma:seed": "node prisma/seed.js",
     "db:setup": "docker-compose run --rm setup",
     "db:start": "docker-compose up -d postgres",
     "db:stop": "docker-compose down postgres",
@@ -22,6 +23,9 @@
     "docker:down": "docker-compose down",
     "docker:clean": "docker-compose down -v",
     "docker:prune": "docker system prune -af"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

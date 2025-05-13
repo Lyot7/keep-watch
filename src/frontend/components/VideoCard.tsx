@@ -12,7 +12,8 @@ export function VideoCard({ video }: VideoCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentState, setCurrentState] = useState(video.state);
 
-  const states = ["À voir", "Impressionnant", "Recommander"];
+  // Use the actual states used in the system, not the UI display states
+  const states = ["A voir !", "Impressionnant", "Recommander"];
 
   const handleStateChange = async (newState: string) => {
     try {
@@ -37,6 +38,16 @@ export function VideoCard({ video }: VideoCardProps) {
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating video state:', error);
+    }
+  };
+
+  // Function to display UI-friendly state names
+  const getDisplayState = (state: string): string => {
+    switch(state) {
+      case "A voir !":
+        return "À voir";
+      default:
+        return state;
     }
   };
 
@@ -70,7 +81,7 @@ export function VideoCard({ video }: VideoCardProps) {
                       : 'text-gray-300 hover:bg-gray-700'
                       }`}
                   >
-                    {state}
+                    {getDisplayState(state)}
                   </button>
                 ))}
               </div>
@@ -79,7 +90,7 @@ export function VideoCard({ video }: VideoCardProps) {
                 onClick={() => setIsEditing(!isEditing)}
                 className="text-blue-400 hover:text-blue-300"
               >
-                {currentState}
+                {getDisplayState(currentState)}
               </button>
             )}
           </div>

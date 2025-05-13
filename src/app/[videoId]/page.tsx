@@ -6,8 +6,113 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+// DateDisplay component to handle async date formatting
+const DateDisplay = ({ video }: { video: ExtendedVideoState }) => {
+  const [formattedDate, setFormattedDate] = useState<string>('Chargement...');
+
+  useEffect(() => {
+    const getDate = async () => {
+      const date = await formatDate(video);
+      setFormattedDate(date);
+    };
+
+    getDate();
+  }, [video]);
+
+  return (
+    <p className="text-gray-500 text-xs mt-1">
+      {formattedDate}
+    </p>
+  );
+};
+
 // Define the same states used in the main application
 const STATES = ["A voir !", "Impressionnant", "Recommander", "Ne pas recommander"];
+
+// Pour les vidéos sans date, on peut tenter de les récupérer directement depuis l'API YouTube
+const fetchYouTubePublishedDate = async (videoId: string): Promise<string | null> => {
+  try {
+    // Utiliser l'API publique YouTube Data API v3 (nécessite une clé API Google)
+    const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+    if (!apiKey) {
+      console.error('YouTube API key is missing');
+      return null;
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${apiKey}&part=snippet`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch video data from YouTube API');
+    }
+    
+    const data = await response.json();
+    if (data.items && data.items.length > 0 && data.items[0].snippet && data.items[0].snippet.publishedAt) {
+      return data.items[0].snippet.publishedAt;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error fetching YouTube data:', error);
+    return null;
+  }
+};
+
+// Date formatter helper function with YouTube API fallback
+const formatDate = async (video: ExtendedVideoState | null): Promise<string> => {
+  if (!video) return 'Date inconnue';
+  
+  // Debug the video object to see all available properties
+  console.log('Video object for date:', video);
+  
+  // Try multiple possible locations for the date
+  const possibleDates = [
+    video.publishedAt,
+    video.snippet?.publishedAt,
+    video.videoState?.publishedAt,
+    video.publishDate,
+    video.publishTime,
+    video.uploadDate,
+    video.createdAt,
+    // Try to extract from raw data if available
+    typeof video.rawData === 'object' && video.rawData ? 
+      (video.rawData as any).snippet?.publishedAt || (video.rawData as any).publishedAt : null
+  ].filter(Boolean);
+  
+  let dateString: string | null = null;
+  
+  if (possibleDates.length > 0) {
+    dateString = possibleDates[0] as string;
+  } else if (video.videoId) {
+    // If no date is found in the local object, try to fetch from YouTube API
+    dateString = await fetchYouTubePublishedDate(video.videoId);
+  }
+  
+  if (!dateString) {
+    return 'Date inconnue';
+  }
+  
+  try {
+    // Use the date string we found
+    const date = new Date(dateString);
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.log('Invalid date detected:', dateString);
+      return 'Date inconnue';
+    }
+    
+    // Format the date in a French locale with year, month, day
+    return date.toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    console.error('Error formatting date:', e);
+    return 'Date inconnue';
+  }
+};
 
 // Color schemes by state - same as in ItemsByState.tsx
 const getStateStyles = (state: string) => {
@@ -58,6 +163,17 @@ const getStateStyles = (state: string) => {
 // At the top of the file, add this type
 interface ExtendedVideoState extends VideoState {
   id?: string;
+  snippet?: {
+    publishedAt?: string;
+  };
+  videoState?: {
+    publishedAt?: string;
+  };
+  publishDate?: string;
+  publishTime?: string;
+  uploadDate?: string;
+  createdAt?: string;
+  rawData?: any;
 }
 
 export default function VideoDetailPage() {
@@ -381,13 +497,13 @@ export default function VideoDetailPage() {
                           navigateTo(`/${rec.videoId || rec.id}`);
                         }}
                       >
-                        <div className="w-40 min-w-[100px] aspect-video relative">
+                        <div className="w-32 h-18 aspect-video relative flex-shrink-0 bg-gray-900">
                           {rec.thumbnailUrl ? (
                             <Image
                               src={rec.thumbnailUrl}
                               alt={rec.title || 'Video thumbnail'}
                               fill
-                              sizes="(max-width: 768px) 100px, 150px"
+                              sizes="128px"
                               className="object-cover rounded"
                             />
                           ) : (
@@ -408,9 +524,7 @@ export default function VideoDetailPage() {
                           <p className="text-gray-400 text-xs mt-1">
                             {rec.channelTitle ? decodeHtml(rec.channelTitle) : 'Unknown Channel'}
                           </p>
-                          <p className="text-gray-500 text-xs mt-1">
-                            ID: {rec.videoId || rec.id || 'Missing'}
-                          </p>
+                          <DateDisplay video={rec} />
                         </div>
                       </div>
                     );
